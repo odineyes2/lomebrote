@@ -1,0 +1,9 @@
+comfyui:
+    base_path: /workspace/shared_models/
+    checkpoints: checkpoints/
+    loras: loras/
+    vae: vae/
+    controlnet: controlnet/
+    upscale_models: upscale_models/
+    clip_vision: clip_vision/
+    embeddings: embeddings/
