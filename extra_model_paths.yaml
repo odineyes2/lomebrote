@@ -7,3 +7,4 @@ comfyui:
     upscale_models: upscale_models/
     clip_vision: clip_vision/
     embeddings: embeddings/
+    wd14_tagger: wd14_tagger/
