@@ -45,16 +45,28 @@ echo "[5/7] 커스텀 노드 설치"
 mkdir -p $NODES
 cd $NODES
 
-# UltimateSDUpscale: 실제 업스케일 로직이 git 서브모듈에 있음.
-# --recursive 없이 받으면 노드가 로드되지 않음.
-if [ -d ComfyUI_UltimateSDUpscale/.git ]; then
-  echo "  - UltimateSDUpscale 이미 존재, 서브모듈만 점검"
-  git -C ComfyUI_UltimateSDUpscale submodule update --init --recursive
-else
-  echo "  - UltimateSDUpscale 클론"
-  git clone --recursive \
-    https://github.com/ssitu/ComfyUI_UltimateSDUpscale.git
-fi
+# 디렉터리명|저장소|서브모듈 필요 여부
+NODE_REPOS=(
+  "ComfyUI_UltimateSDUpscale|https://github.com/ssitu/ComfyUI_UltimateSDUpscale.git|yes"
+  "ComfyUI-Inpaint-CropAndStitch|https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch.git|no"
+)
+
+for entry in "${NODE_REPOS[@]}"; do
+  IFS='|' read -r dir url rec <<< "$entry"
+  if [ -d "$dir/.git" ]; then
+    echo "  - $dir 이미 존재"
+    if [ "$rec" = "yes" ]; then
+      git -C "$dir" submodule update --init --recursive
+    fi
+  else
+    echo "  - $dir 클론"
+    if [ "$rec" = "yes" ]; then
+      git clone --recursive "$url"
+    else
+      git clone "$url"
+    fi
+  fi
+done
 
 # requirements.txt가 있는 노드만 의존성 설치
 for req in $NODES/*/requirements.txt; do
@@ -66,11 +78,12 @@ done
 echo "[6/7] 체크포인트 다운로드"
 cd $BASE/checkpoints
 CKPT=WAI-illustrious-SDXL.safetensors
-if [ -s "$CKPT" ]; then
+if [ -s "$CKPT" ] && [ "$(stat -c%s "$CKPT")" -gt 1000000000 ]; then
   echo "  - $CKPT 있음, 건너뜀"
 else
-  wget -O "$CKPT" \
-    "https://civitai.red/api/download/models/2883731?fileId=2763986"
+  wget -O "$CKPT.part" "https://civitai.red/api/download/models/2883731?fileId=2763986" \
+    && mv "$CKPT.part" "$CKPT" \
+    || { echo "체크포인트 다운로드 실패"; rm -f "$CKPT.part"; exit 1; }
 fi
 
 echo "[7/7] 업스케일 모델 다운로드"
