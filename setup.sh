@@ -24,18 +24,24 @@ done
 [ -z "$PY" ] && PY="$(command -v python3)"
 echo "python: $PY"
 
-echo "[1/6] 폴더 생성"
-mkdir -p $BASE/{checkpoints,loras,vae,controlnet,upscale_models,clip_vision,embeddings}
-mkdir -p $PROJ/{workflows,output_keep,output_dump,reference}
+echo "[1/7] git 설정"
+git config --global user.email "odineyes2@gmail.com"
+git config --global user.name "odineyes2"
+git config --global credential.helper 'cache --timeout=36000'
+echo "git 설정 완료. 최초 로그인 후 10시간 동안 아이디와 PAT를 요구하지 않습니다."
 
-echo "[2/6] 모델 경로 설정"
+echo "[2/7] 폴더 생성"
+mkdir -p $BASE/{checkpoints,loras,vae,controlnet,upscale_models,clip_vision,embeddings}
+mkdir -p $PROJ/output_keep
+
+echo "[3/7] 모델 경로 설정"
 cp $REPO/extra_model_paths.yaml $COMFY/
 
-echo "[3/6] 워크플로우 배치"
+echo "[4/7] 워크플로우 배치"
 mkdir -p $COMFY/user/default/workflows
 cp -n $REPO/workflows/*.json $COMFY/user/default/workflows/ 2>/dev/null || true
 
-echo "[4/6] 커스텀 노드 설치"
+echo "[5/7] 커스텀 노드 설치"
 mkdir -p $NODES
 cd $NODES
 
@@ -57,7 +63,7 @@ for req in $NODES/*/requirements.txt; do
   "$PY" -m pip install -q -r "$req"
 done
 
-echo "[5/6] 체크포인트 다운로드"
+echo "[6/7] 체크포인트 다운로드"
 cd $BASE/checkpoints
 CKPT=WAI-illustrious-SDXL.safetensors
 if [ -s "$CKPT" ]; then
@@ -67,7 +73,7 @@ else
     "https://civitai.red/api/download/models/2883731?fileId=2763986"
 fi
 
-echo "[6/6] 업스케일 모델 다운로드"
+echo "[7/7] 업스케일 모델 다운로드"
 cd $BASE/upscale_models
 UPS=4x-AnimeSharp.pth
 if [ -s "$UPS" ]; then
