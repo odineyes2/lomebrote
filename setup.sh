@@ -10,7 +10,7 @@ set -e
 
 COMFY=/workspace/runpod-slim/ComfyUI
 BASE=/workspace/shared_models
-PROJ=/workspace/project_lombrote
+PROJ=/workspace/project_lomebrote
 REPO=/workspace/lomebrote
 NODES=$COMFY/custom_nodes
 
