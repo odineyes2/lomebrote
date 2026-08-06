@@ -24,24 +24,25 @@ done
 [ -z "$PY" ] && PY="$(command -v python3)"
 echo "python: $PY"
 
-echo "[1/9] git 설정"
+echo "[1/11] git 설정"
 git config --global user.email "odineyes2@gmail.com"
 git config --global user.name "odineyes2"
 git config --global credential.helper 'cache --timeout=36000'
 echo "git 설정 완료. 최초 로그인 후 10시간 동안 아이디와 PAT를 요구하지 않습니다."
 
-echo "[2/9] 폴더 생성"
+echo "[2/11] 폴더 생성"
 mkdir -p $BASE/{checkpoints,loras,vae,controlnet,upscale_models,clip_vision,embeddings,wd14_tagger}
+mkdir -p $BASE/controlnet_aux   # DWPose 등 전처리기 가중치
 mkdir -p $PROJ/output_keep
 
-echo "[3/9] 모델 경로 설정"
+echo "[3/11] 모델 경로 설정"
 cp $REPO/extra_model_paths.yaml $COMFY/
 
-echo "[4/9] 워크플로우 배치"
+echo "[4/11] 워크플로우 배치"
 mkdir -p $COMFY/user/default/workflows
 cp -n $REPO/workflows/*.json $COMFY/user/default/workflows/ 2>/dev/null || true
 
-echo "[5/9] 커스텀 노드 설치"
+echo "[5/11] 커스텀 노드 설치"
 mkdir -p $NODES
 cd $NODES
 
@@ -50,6 +51,7 @@ NODE_REPOS=(
   "ComfyUI_UltimateSDUpscale|https://github.com/ssitu/ComfyUI_UltimateSDUpscale.git|yes"
   "ComfyUI-Inpaint-CropAndStitch|https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch.git|no"
   "ComfyUI-WD14-Tagger|https://github.com/pythongosssss/ComfyUI-WD14-Tagger.git|no"
+  "comfyui_controlnet_aux|https://github.com/Fannovel16/comfyui_controlnet_aux.git|no"
 )
 
 for entry in "${NODE_REPOS[@]}"; do
@@ -76,7 +78,20 @@ for req in $NODES/*/requirements.txt; do
   "$PY" -m pip install -q -r "$req"
 done
 
-echo "[6/9] WD14 태거 기본값 패치"
+echo "[6/11] controlnet_aux 설정"
+# 전처리기 가중치 기본 저장 위치가 노드 폴더 안(./ckpts)이라 노드를 다시 클론하면 같이 날아간다.
+# annotator_ckpts_path를 $BASE로 빼서 다른 모델들과 같은 곳에 모아둔다.
+# EP_list를 CPU만 남긴 이유: onnxruntime-gpu는 CUDA 12에서 별도 인덱스가 필요해 설치가 번거롭다.
+# 대신 노드에서 .torchscript.pt 계열을 고르면 torch가 알아서 GPU를 쓴다 (아래 11단계에서 미리 받음).
+cat > $NODES/comfyui_controlnet_aux/config.yaml << YAMLEOF
+annotator_ckpts_path: "$BASE/controlnet_aux"
+custom_temp_path:
+USE_SYMLINKS: False
+EP_list: ["CPUExecutionProvider"]
+YAMLEOF
+echo "  - 전처리기 가중치 경로: $BASE/controlnet_aux"
+
+echo "[7/11] WD14 태거 기본값 패치"
 # pysssss.json은 클론한 저장소 안에 있어서 파드를 버리면 초기화된다.
 # 기본값은 구형 moat-v2 + replace_underscore 꺼짐 상태이므로 매번 덮어쓴다.
 # models 딕셔너리는 건드리지 않고 settings만 병합 (업스트림 모델 목록 갱신 반영).
@@ -102,7 +117,7 @@ else
   echo "  ! pysssss.json 없음, 건너뜀"
 fi
 
-echo "[7/9] 체크포인트 다운로드"
+echo "[8/11] 체크포인트 다운로드"
 cd $BASE/checkpoints
 CKPT=WAI-illustrious-SDXL.safetensors
 if [ -s "$CKPT" ] && [ "$(stat -c%s "$CKPT")" -gt 1000000000 ]; then
@@ -113,7 +128,7 @@ else
     || { echo "체크포인트 다운로드 실패"; rm -f "$CKPT.part"; exit 1; }
 fi
 
-echo "[8/9] 업스케일 모델 다운로드"
+echo "[9/11] 업스케일 모델 다운로드"
 cd $BASE/upscale_models
 UPS=4x-AnimeSharp.pth
 if [ -s "$UPS" ]; then
@@ -123,7 +138,7 @@ else
     "https://huggingface.co/Kim2091/AnimeSharp/resolve/main/4x-AnimeSharp.pth"
 fi
 
-echo "[9/9] WD14 태거 모델 다운로드"
+echo "[10/11] WD14 태거 모델 다운로드"
 # 런타임 자동 다운로드도 되지만, 첫 태깅 때 작업이 멈추는 걸 피하려고 미리 받는다.
 # .onnx / .csv 두 파일 이름이 모델명과 같아야 노드가 로컬 모델로 인식한다.
 cd $BASE/wd14_tagger
@@ -139,5 +154,49 @@ else
     "https://huggingface.co/SmilingWolf/$TAGGER/resolve/main/selected_tags.csv"
 fi
 
+echo "[11/11] ControlNet 모델 + DWPose 전처리기 다운로드"
+
+# ── ControlNet 본체 ──
+# WAI-illustrious-SDXL은 Illustrious 계열이라 범용 SDXL ControlNet(xinsir 등)을 쓰면
+# 포즈는 잡히지만 색이 탁해지고 화풍이 흐트러진다. Illustrious로 학습된 걸 쓴다.
+# Civitai "Illustrious-XL ControlNet Openpose"와 동일 파일 (sha256 0d8bacf2...).
+cd $BASE/controlnet
+CN_POSE=Illustrious_openpose.safetensors
+if [ -s "$CN_POSE" ] && [ "$(stat -c%s "$CN_POSE")" -gt 2000000000 ]; then
+  echo "  - $CN_POSE 있음, 건너뜀"
+else
+  wget -O "$CN_POSE.part" \
+    "https://huggingface.co/windsingai/openpose/resolve/main/openpose_s6000.safetensors" \
+    && mv "$CN_POSE.part" "$CN_POSE" \
+    || { echo "ControlNet 모델 다운로드 실패"; rm -f "$CN_POSE.part"; exit 1; }
+fi
+
+# ── DWPose 전처리기 가중치 ──
+# 안 받아두면 첫 골격 추출 때 런타임 다운로드로 몇 분간 멈춘다.
+# 저장 경로는 <ckpts>/<HF 저장소명>/<파일명> 구조를 그대로 지켜야 노드가 로컬 파일로 인식한다.
+# 저장소|파일명
+AUX_FILES=(
+  "hr16/yolox-onnx|yolox_l.torchscript.pt"
+  "hr16/DWPose-TorchScript-BatchSize5|dw-ll_ucoco_384_bs5.torchscript.pt"
+  "yzd-v/DWPose|yolox_l.onnx"
+)
+
+for entry in "${AUX_FILES[@]}"; do
+  IFS='|' read -r repo fname <<< "$entry"
+  dest="$BASE/controlnet_aux/$repo"
+  mkdir -p "$dest"
+  if [ -s "$dest/$fname" ]; then
+    echo "  - $fname 있음, 건너뜀"
+  else
+    echo "  - $fname 받는 중"
+    wget -q --show-progress -O "$dest/$fname.part" \
+      "https://huggingface.co/$repo/resolve/main/$fname" \
+      && mv "$dest/$fname.part" "$dest/$fname" \
+      || { echo "$fname 다운로드 실패"; rm -f "$dest/$fname.part"; exit 1; }
+  fi
+done
+
 echo ""
 echo "완료. RunPod 콘솔에서 파드를 Restart 해야 yaml이 적용됩니다."
+echo "DWPose 노드에서 bbox_detector=yolox_l.torchscript.pt,"
+echo "pose_estimator=dw-ll_ucoco_384_bs5.torchscript.pt 로 두면 GPU를 씁니다."
