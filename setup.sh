@@ -36,11 +36,28 @@ FILES=(
   "$BASE/controlnet|NoobAI_depth_midas.safetensors|https://huggingface.co/Eugeoter/noob-sdxl-controlnet-depth_midas-v1-1/resolve/main/diffusion_pytorch_model.fp16.safetensors"
   # "$BASE/controlnet|Illustrious_depth_umeairt.safetensors|https://huggingface.co/UmeAiRT/ComfyUI-Auto-Installer-Assets/resolve/main/models/controlnet/illustrious-xl-depth.safetensors"
 
+  # 17번 선화 계열. 전처리기 종류와 모델을 반드시 짝맞출 것(scribble엔 pidinet, softedge엔 hed).
+  # 각 2.5GB. 이 컬렉션에 범용 lineart는 없고 lineart_anime뿐이다.
+  "$BASE/controlnet|NoobAI_lineart_anime.safetensors|https://huggingface.co/Eugeoter/noob-sdxl-controlnet-lineart_anime/resolve/main/diffusion_pytorch_model.fp16.safetensors"
+  "$BASE/controlnet|NoobAI_scribble_pidinet.safetensors|https://huggingface.co/Eugeoter/noob-sdxl-controlnet-scribble_pidinet/resolve/main/diffusion_pytorch_model.fp16.safetensors"
+  "$BASE/controlnet|NoobAI_softedge_hed.safetensors|https://huggingface.co/Eugeoter/noob-sdxl-controlnet-softedge_hed/resolve/main/diffusion_pytorch_model.fp16.safetensors"
+  # "$BASE/controlnet|NoobAI_manga_line.safetensors|https://huggingface.co/Eugeoter/noob-sdxl-controlnet-manga_line/resolve/main/diffusion_pytorch_model.fp16.safetensors"
+  # "$BASE/controlnet|NoobAI_lineart_realistic.safetensors|https://huggingface.co/Eugeoter/noob-sdxl-controlnet-lineart_realistic/resolve/main/diffusion_pytorch_model.fp16.safetensors"
+
   # 전처리기 가중치. 폴더가 <HF 저장소명> 구조여야 노드가 찾는다.
   "$BASE/controlnet_aux/hr16/yolox-onnx|yolox_l.torchscript.pt|https://huggingface.co/hr16/yolox-onnx/resolve/main/yolox_l.torchscript.pt"
   "$BASE/controlnet_aux/hr16/DWPose-TorchScript-BatchSize5|dw-ll_ucoco_384_bs5.torchscript.pt|https://huggingface.co/hr16/DWPose-TorchScript-BatchSize5/resolve/main/dw-ll_ucoco_384_bs5.torchscript.pt"
   "$BASE/controlnet_aux/yzd-v/DWPose|yolox_l.onnx|https://huggingface.co/yzd-v/DWPose/resolve/main/yolox_l.onnx"
   "$BASE/controlnet_aux/depth-anything/Depth-Anything-V2-Large|depth_anything_v2_vitl.pth|https://huggingface.co/depth-anything/Depth-Anything-V2-Large/resolve/main/depth_anything_v2_vitl.pth"
+
+  # 선화 계열 전처리기. 안 받아두면 preprocessor를 바꿀 때마다 런타임 다운로드로 멈춘다.
+  # lineart=sk_model+sk_model2 / lineart_anime=netG / hed(softedge)=ControlNetHED / pidi(scribble)=table5_pidinet
+  "$BASE/controlnet_aux/lllyasviel/Annotators|sk_model.pth|https://huggingface.co/lllyasviel/Annotators/resolve/main/sk_model.pth"
+  "$BASE/controlnet_aux/lllyasviel/Annotators|sk_model2.pth|https://huggingface.co/lllyasviel/Annotators/resolve/main/sk_model2.pth"
+  "$BASE/controlnet_aux/lllyasviel/Annotators|netG.pth|https://huggingface.co/lllyasviel/Annotators/resolve/main/netG.pth"
+  "$BASE/controlnet_aux/lllyasviel/Annotators|ControlNetHED.pth|https://huggingface.co/lllyasviel/Annotators/resolve/main/ControlNetHED.pth"
+  "$BASE/controlnet_aux/lllyasviel/Annotators|table5_pidinet.pth|https://huggingface.co/lllyasviel/Annotators/resolve/main/table5_pidinet.pth"
+  # "$BASE/controlnet_aux/lllyasviel/Annotators|erika.pth|https://huggingface.co/lllyasviel/Annotators/resolve/main/erika.pth"
 )
 
 # 커스텀 노드: 폴더명|저장소|서브모듈 여부
@@ -49,6 +66,10 @@ NODE_REPOS=(
   "ComfyUI-Inpaint-CropAndStitch|https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch.git|no"
   "ComfyUI-WD14-Tagger|https://github.com/pythongosssss/ComfyUI-WD14-Tagger.git|no"
   "comfyui_controlnet_aux|https://github.com/Fannovel16/comfyui_controlnet_aux.git|no"
+  # 9번 XY Plot용. Manager로만 깔아뒀던 탓에 파드마다 사라지고 있었다.
+  # 17번 strength × end_percent 격자는 'XY Input: Control Net Plot' 노드로 뽑는다.
+  # 이 노드는 cnet_stack을 받으므로 Apply ControlNet이 아니라 Control Net Stacker로 배선할 것.
+  "efficiency-nodes-comfyui|https://github.com/jags111/efficiency-nodes-comfyui.git|no"
 )
 
 # ──────────────────────────────────────────────────
@@ -62,10 +83,14 @@ git config --global credential.helper 'cache --timeout=36000'
 
 echo "[2/5] 폴더 · 설정"
 mkdir -p $BASE/{checkpoints,loras,vae,controlnet,upscale_models,clip_vision,embeddings,wd14_tagger,controlnet_aux}
-mkdir -p $PROJ/{output_keep,depthmaps}
+mkdir -p $PROJ/{output_keep,depthmaps,sketches}
 cp $REPO/extra_model_paths.yaml $COMFY/
 mkdir -p $COMFY/user/default/workflows
 cp -n $REPO/workflows/*.json $COMFY/user/default/workflows/ 2>/dev/null || true
+
+# 러프 스케치는 $PROJ/sketches에 두고 파드마다 input으로 복사한다($COMFY는 매번 초기화됨).
+mkdir -p $COMFY/input
+cp -n $PROJ/sketches/* $COMFY/input/ 2>/dev/null || true
 
 echo "[3/5] 커스텀 노드"
 mkdir -p $NODES && cd $NODES
@@ -109,6 +134,8 @@ json.dump(c, open(p, "w"), indent=2, ensure_ascii=False)
 PYEOF
 
 echo "[5/5] 파일 다운로드"
+# 하나 실패해도 나머지는 계속 받는다. 파드 시간이 아깝다. 실패 목록은 맨 끝에 모아 출력.
+FAILED=()
 for e in "${FILES[@]}"; do
   IFS='|' read -r dir name url <<< "$e"
   dest="$dir/$name"
@@ -118,11 +145,16 @@ for e in "${FILES[@]}"; do
   fi
   echo "  + $name"
   mkdir -p "$dir"
-  wget -q --show-progress -O "$dest.part" "$url" \
-    || { rm -f "$dest.part"; echo "  ! 다운로드 실패: $name"; exit 1; }
+  if ! wget -q --show-progress -O "$dest.part" "$url"; then
+    rm -f "$dest.part"
+    FAILED+=("$name (다운로드 실패)")
+    continue
+  fi
   # HTML 오류 페이지를 받으면 크기가 확 작다. 조용히 넘기지 않는다.
   if [ "$(stat -c%s "$dest.part")" -lt 100000 ]; then
-    rm -f "$dest.part"; echo "  ! 크기 이상 — URL 확인 필요: $name"; exit 1
+    rm -f "$dest.part"
+    FAILED+=("$name (크기 이상 — URL 확인 필요)")
+    continue
   fi
   mv "$dest.part" "$dest"
 done
@@ -131,7 +163,19 @@ done
 # HF_HOME=$BASE/hf_cache "$PY" -c "from huggingface_hub import snapshot_download as d; d('Intel/dpt-hybrid-midas')"
 
 echo ""
+if [ ${#FAILED[@]} -gt 0 ]; then
+  echo "!! 실패 ${#FAILED[@]}건:"
+  for f in "${FAILED[@]}"; do echo "   - $f"; done
+  echo ""
+fi
+
 echo "완료. 파드를 Restart 해야 yaml이 적용됩니다."
 echo "포즈: DWPose(torchscript) + Illustrious_openpose, strength 1.0 / end 0.4"
 echo "깊이: DepthAnythingV2(vitl) + NoobAI_depth_midas, end 0.8 근처에서 탐색"
 echo "      깊이맵은 가까울수록 밝음. Blender Z pass는 반대로 나오기 쉬움."
+echo "선화: lineart_anime 전처리기 + NoobAI_lineart_anime, strength 0.6~0.8 / end 0.6부터"
+echo "      전처리기와 모델을 반드시 짝맞출 것 (scribble→pidinet, softedge→hed)"
+echo "      손그림(흰 배경·검은 선)을 전처리 없이 쓰려면 ImageInvert로 반전"
+echo "      러프 원본은 $PROJ/sketches 에 둘 것 (input은 파드와 함께 사라짐)"
+
+exit ${#FAILED[@]}
