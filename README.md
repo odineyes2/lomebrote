@@ -121,6 +121,7 @@ overcast evening light, shallow depth of field, 35mm photograph
 | ComfyUI-Inpaint-CropAndStitch | 인페인팅 영역 확대 후 재합성 |
 | ComfyUI-WD14-Tagger | booru 태그 추출 (애니 계열에서만 유용) |
 | comfyui_controlnet_aux | DWPose, DepthAnythingV2 등 전처리기 |
+| efficiency-nodes-comfyui | XY Plot, KSampler (Efficient), Efficient Loader |
 
 ### 전처리기 가중치 (프로필 무관, 약 1.9GB)
 
@@ -130,7 +131,6 @@ overcast evening light, shallow depth of field, 35mm photograph
 | `dw-ll_ucoco_384_bs5.torchscript.pt` | ~200MB | DWPose 골격 추정 (GPU) |
 | `yolox_l.onnx` | ~200MB | DWPose 폴백 (CPU) |
 | `depth_anything_v2_vitl.pth` | 1.3GB | 깊이맵 추출 |
-
 
 ## 운영 메모
 
