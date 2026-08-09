@@ -53,6 +53,9 @@ NODE_REPOS=(
   "ComfyUI-Inpaint-CropAndStitch|https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch.git|no"
   "ComfyUI-WD14-Tagger|https://github.com/pythongosssss/ComfyUI-WD14-Tagger.git|no"
   "comfyui_controlnet_aux|https://github.com/Fannovel16/comfyui_controlnet_aux.git|no"
+  # XY Plot, KSampler (Efficient), Efficient Loader.
+  # 원저작자(LucianoCirino) 저장소는 관리 중단. jags111 포크가 유지판이다.
+  "efficiency-nodes-comfyui|https://github.com/jags111/efficiency-nodes-comfyui.git|no"
 )
 
 # ──────────────────────────────────────────────────
