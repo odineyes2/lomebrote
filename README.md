@@ -9,7 +9,13 @@ RunPod ComfyUI 환경 세팅. 파드는 작업 후 매번 terminate하고 네트
 
 ```bash
 cd /workspace && git clone https://github.com/odineyes2/lomebrote.git
-cd /workspace/lomebrote
+```
+
+```bash
+cd /workspace/lomebrote && time bash setup.sh real nsfw
+```
+
+```bash
 ./setup.sh real          # 실사
 ./setup.sh anime         # 애니 (Illustrious 공식 베이스)
 ./setup.sh nsfw          # 애니 NSFW (WAI)
