@@ -6,6 +6,7 @@ FILES+=(
   "$BASE/upscale_models|4x-UltraSharpV2.pth|https://huggingface.co/Kim2091/UltraSharpV2/resolve/main/4x-UltraSharpV2.pth"
   "$BASE/controlnet|xinsir_openpose.safetensors|https://huggingface.co/xinsir/controlnet-openpose-sdxl-1.0/resolve/main/diffusion_pytorch_model.safetensors"
   "$BASE/controlnet|xinsir_depth.safetensors|https://huggingface.co/xinsir/controlnet-depth-sdxl-1.0/resolve/main/diffusion_pytorch_model.safetensors"
+  "$BASE/controlnet|xinsir_scribble.safetensors|https://huggingface.co/xinsir/controlnet-scribble-sdxl-1.0/resolve/main/diffusion_pytorch_model.safetensors"
 )
 
 HINT="$HINT
