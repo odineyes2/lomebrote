@@ -6,5 +6,6 @@ comfyui:
     controlnet: controlnet/
     upscale_models: upscale_models/
     clip_vision: clip_vision/
+    ipadapter: ipadapter/
     embeddings: embeddings/
     wd14_tagger: wd14_tagger/

@@ -39,6 +39,20 @@ FILES=(
   "$BASE/controlnet_aux/yzd-v/DWPose|yolox_l.onnx|https://huggingface.co/yzd-v/DWPose/resolve/main/yolox_l.onnx"
   "$BASE/controlnet_aux/depth-anything/Depth-Anything-V2-Large|depth_anything_v2_vitl.pth|https://huggingface.co/depth-anything/Depth-Anything-V2-Large/resolve/main/depth_anything_v2_vitl.pth"
 )
+
+# 공통: IPAdapter. 현재 프로필(real/anime/nsfw)이 전부 SDXL이라 프로필별로 나눌 필요가 없다.
+# SD1.5 프로필을 추가하게 되면 그때 아래 ipadapter 두 줄만 해당 프로필로 옮기고
+# models/ip-adapter(-plus)_sd15.safetensors 를 쓸 것. clip_vision(ViT-H)은 그대로 공유된다.
+#
+# 파일명 규칙: 앞의 sd15/sdxl = 체크포인트, 뒤의 vit-h/vit-G = clip_vision 인코더.
+# sdxl_vit-h 는 "SDXL 체크포인트 + ViT-H 인코더"라는 뜻이다(bigG 아님).
+# 원본 파일명이 model.safetensors 라서 리네임이 필수 — name 필드가 그 역할을 한다.
+# Unified Loader는 아래 이름과 글자 하나까지 같아야 인식한다.
+FILES+=(
+  "$BASE/clip_vision|CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors|https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors"
+  "$BASE/ipadapter|ip-adapter_sdxl_vit-h.safetensors|https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl_vit-h.safetensors"
+  "$BASE/ipadapter|ip-adapter-plus_sdxl_vit-h.safetensors|https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors"
+)
 HINT=""
 
 for p in "$@"; do
@@ -56,6 +70,9 @@ NODE_REPOS=(
   # XY Plot, KSampler (Efficient), Efficient Loader.
   # 원저작자(LucianoCirino) 저장소는 관리 중단. jags111 포크가 유지판이다.
   "efficiency-nodes-comfyui|https://github.com/jags111/efficiency-nodes-comfyui.git|no"
+  # 참조 이미지 조건화(1-image LoRA). 노드 코드는 체크포인트 계열을 가리지 않는다.
+  # 2025.04부터 유지보수 전용 모드라 노드명·파일명이 안정적이다.
+  "ComfyUI_IPAdapter_plus|https://github.com/cubiq/ComfyUI_IPAdapter_plus.git|no"
 )
 
 # ──────────────────────────────────────────────────
@@ -68,7 +85,7 @@ git config --global user.name "odineyes2"
 git config --global credential.helper 'cache --timeout=36000'
 
 echo "[2/5] 폴더 · 설정"
-mkdir -p $BASE/{checkpoints,loras,vae,controlnet,upscale_models,clip_vision,embeddings,wd14_tagger,controlnet_aux}
+mkdir -p $BASE/{checkpoints,loras,vae,controlnet,upscale_models,clip_vision,ipadapter,embeddings,wd14_tagger,controlnet_aux}
 mkdir -p $PROJ/{output_keep,depthmaps}
 cp $REPO/extra_model_paths.yaml $COMFY/
 mkdir -p $COMFY/user/default/workflows
@@ -138,4 +155,7 @@ echo ""
 echo "완료. 파드를 Restart 해야 yaml이 적용됩니다."
 echo "공통: DWPose(torchscript) / DepthAnythingV2(vitl)"
 echo "      깊이맵은 가까울수록 밝음. Blender Z pass는 반대로 나오기 쉬움."
+echo "공통: IPAdapter(SDXL, ViT-H) — base 와 plus 두 개."
+echo "      base=ip-adapter_sdxl_vit-h(무난), plus=ip-adapter-plus_sdxl_vit-h(강함)."
+echo "      clip_vision 은 CLIP-ViT-H-14 하나만 쓴다. weight 0.6~0.8 부터 시작."
 printf "%s" "$HINT"
