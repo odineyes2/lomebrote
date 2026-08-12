@@ -9,3 +9,11 @@ comfyui:
     ipadapter: ipadapter/
     embeddings: embeddings/
     wd14_tagger: wd14_tagger/
+    # 아래부터 Qwen / Flux 계열용. SDXL은 체크포인트 한 덩어리라 필요 없었지만
+    # 이쪽은 diffusion model · text encoder · VAE 가 파일부터 분리돼 있다.
+    diffusion_models: diffusion_models/
+    text_encoders: text_encoders/
+    # ComfyUI-GGUF 의 Unet Loader (GGUF) 가 보는 폴더.
+    unet: unet/
+    # 구버전 ComfyUI 는 text_encoders 대신 clip 키를 읽는다. 같은 폴더를 가리켜 둔다.
+    clip: text_encoders/

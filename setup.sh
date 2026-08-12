@@ -7,7 +7,9 @@ set -e
 #   ./setup.sh real          실사
 #   ./setup.sh anime         애니 (Illustrious 공식 베이스)
 #   ./setup.sh nsfw          애니 NSFW (WAI)
+#   ./setup.sh qwen          Qwen-Image-Edit 지시문 편집 (SDXL 아님, 단독 실행 가능)
 #   ./setup.sh anime nsfw    둘 다. 겹치는 파일은 한 번만 받는다.
+#   ./setup.sh anime qwen    편집 후 화풍 복원 왕복까지. qwen 은 자동으로 GGUF 가 된다.
 
 COMFY=/workspace/runpod-slim/ComfyUI
 BASE=/workspace/shared_models
@@ -23,7 +25,8 @@ done
 [ -z "$PY" ] && PY="$(command -v python3)"
 
 # ── 프로필 로드 ────────────────────────────────────
-# 프로필은 FILES 에 항목을 덧붙이고, HINT 에 안내문을 넣는다.
+# 프로필은 FILES 와 NODE_REPOS 에 항목을 덧붙이고, HINT 에 안내문을 넣는다.
+# SDXL 계열 프로필은 SDXL=1 을 선언한다 (아래 IPAdapter 블록의 조건).
 
 if [ $# -eq 0 ]; then
   echo "사용법: ./setup.sh <프로필...>"
@@ -33,35 +36,18 @@ if [ $# -eq 0 ]; then
 fi
 
 # 공통: 전처리기 가중치. 폴더가 <HF 저장소명> 구조여야 노드가 찾는다.
+# qwen 에도 쓸모가 있다 — openpose 맵을 참조 이미지 중 하나로 넣으면 포즈를 읽는다.
 FILES=(
   "$BASE/controlnet_aux/hr16/yolox-onnx|yolox_l.torchscript.pt|https://huggingface.co/hr16/yolox-onnx/resolve/main/yolox_l.torchscript.pt"
   "$BASE/controlnet_aux/hr16/DWPose-TorchScript-BatchSize5|dw-ll_ucoco_384_bs5.torchscript.pt|https://huggingface.co/hr16/DWPose-TorchScript-BatchSize5/resolve/main/dw-ll_ucoco_384_bs5.torchscript.pt"
   "$BASE/controlnet_aux/yzd-v/DWPose|yolox_l.onnx|https://huggingface.co/yzd-v/DWPose/resolve/main/yolox_l.onnx"
   "$BASE/controlnet_aux/depth-anything/Depth-Anything-V2-Large|depth_anything_v2_vitl.pth|https://huggingface.co/depth-anything/Depth-Anything-V2-Large/resolve/main/depth_anything_v2_vitl.pth"
 )
-
-# 공통: IPAdapter. 현재 프로필(real/anime/nsfw)이 전부 SDXL이라 프로필별로 나눌 필요가 없다.
-# SD1.5 프로필을 추가하게 되면 그때 아래 ipadapter 두 줄만 해당 프로필로 옮기고
-# models/ip-adapter(-plus)_sd15.safetensors 를 쓸 것. clip_vision(ViT-H)은 그대로 공유된다.
-#
-# 파일명 규칙: 앞의 sd15/sdxl = 체크포인트, 뒤의 vit-h/vit-G = clip_vision 인코더.
-# sdxl_vit-h 는 "SDXL 체크포인트 + ViT-H 인코더"라는 뜻이다(bigG 아님).
-# 원본 파일명이 model.safetensors 라서 리네임이 필수 — name 필드가 그 역할을 한다.
-# Unified Loader는 아래 이름과 글자 하나까지 같아야 인식한다.
-FILES+=(
-  "$BASE/clip_vision|CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors|https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors"
-  "$BASE/ipadapter|ip-adapter_sdxl_vit-h.safetensors|https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl_vit-h.safetensors"
-  "$BASE/ipadapter|ip-adapter-plus_sdxl_vit-h.safetensors|https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors"
-)
 HINT=""
-
-for p in "$@"; do
-  f="$SELF/profiles/$p.sh"
-  [ -f "$f" ] || { echo "없는 프로필: $p"; exit 1; }
-  source "$f"
-done
+SDXL=""
 
 # 커스텀 노드: 폴더명|저장소|서브모듈 여부
+# 프로필이 NODE_REPOS+= 로 덧붙일 수 있어야 하므로 반드시 프로필 source 보다 위에 있어야 한다.
 NODE_REPOS=(
   "ComfyUI_UltimateSDUpscale|https://github.com/ssitu/ComfyUI_UltimateSDUpscale.git|yes"
   "ComfyUI-Inpaint-CropAndStitch|https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch.git|no"
@@ -75,6 +61,29 @@ NODE_REPOS=(
   "ComfyUI_IPAdapter_plus|https://github.com/cubiq/ComfyUI_IPAdapter_plus.git|no"
 )
 
+for p in "$@"; do
+  f="$SELF/profiles/$p.sh"
+  [ -f "$f" ] || { echo "없는 프로필: $p"; exit 1; }
+  source "$f"
+done
+
+# SDXL 전용: IPAdapter 가중치. 약 4GB 라 qwen 단독 실행에서는 받지 않는다.
+# 예전엔 프로필이 전부 SDXL이라 무조건 받았지만 qwen 이 그 전제를 깼다.
+# SD1.5 프로필을 추가하게 되면 models/ip-adapter(-plus)_sd15.safetensors 를 쓸 것.
+# clip_vision(ViT-H)은 그대로 공유된다.
+#
+# 파일명 규칙: 앞의 sd15/sdxl = 체크포인트, 뒤의 vit-h/vit-G = clip_vision 인코더.
+# sdxl_vit-h 는 "SDXL 체크포인트 + ViT-H 인코더"라는 뜻이다(bigG 아님).
+# 원본 파일명이 model.safetensors 라서 리네임이 필수 — name 필드가 그 역할을 한다.
+# Unified Loader는 아래 이름과 글자 하나까지 같아야 인식한다.
+if [ -n "$SDXL" ]; then
+  FILES+=(
+    "$BASE/clip_vision|CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors|https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors"
+    "$BASE/ipadapter|ip-adapter_sdxl_vit-h.safetensors|https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl_vit-h.safetensors"
+    "$BASE/ipadapter|ip-adapter-plus_sdxl_vit-h.safetensors|https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors"
+  )
+fi
+
 # ──────────────────────────────────────────────────
 
 echo "프로필: $* / python: $PY / 디스크: $(df -h /workspace | awk 'NR==2 {print $4}')"
@@ -85,7 +94,8 @@ git config --global user.name "odineyes2"
 git config --global credential.helper 'cache --timeout=36000'
 
 echo "[2/5] 폴더 · 설정"
-mkdir -p $BASE/{checkpoints,loras,vae,controlnet,upscale_models,clip_vision,ipadapter,embeddings,wd14_tagger,controlnet_aux}
+# diffusion_models/text_encoders/unet 은 Qwen·Flux 계열용. yaml 에도 같은 키가 있어야 한다.
+mkdir -p $BASE/{checkpoints,loras,vae,controlnet,upscale_models,clip_vision,ipadapter,embeddings,wd14_tagger,controlnet_aux,diffusion_models,text_encoders,unet}
 mkdir -p $PROJ/{output_keep,depthmaps}
 cp $REPO/extra_model_paths.yaml $COMFY/
 mkdir -p $COMFY/user/default/workflows
@@ -154,8 +164,13 @@ done
 echo ""
 echo "완료. 파드를 Restart 해야 yaml이 적용됩니다."
 echo "공통: DWPose(torchscript) / DepthAnythingV2(vitl)"
-echo "      깊이맵은 가까울수록 밝음. Blender Z pass는 반대로 나오기 쉬움."
-echo "공통: IPAdapter(SDXL, ViT-H) — base 와 plus 두 개."
-echo "      base=ip-adapter_sdxl_vit-h(무난), plus=ip-adapter-plus_sdxl_vit-h(강함)."
-echo "      clip_vision 은 CLIP-ViT-H-14 하나만 쓴다. weight 0.6~0.8 부터 시작."
+echo "      깊이맵은 가까울수록 밝음. Blender Z pass는 반대로 나오기 쉽습니다."
+if [ -n "$SDXL" ]; then
+  echo "SDXL: IPAdapter(ViT-H) — base 와 plus 두 개."
+  echo "      base=ip-adapter_sdxl_vit-h(무난), plus=ip-adapter-plus_sdxl_vit-h(강함)."
+  echo "      clip_vision 은 CLIP-ViT-H-14 하나만 쓴다. weight 0.6~0.8 부터 시작."
+else
+  echo "SDXL 프로필이 없어 IPAdapter·clip_vision(약 4GB)은 건너뛰었습니다."
+fi
 printf "%s" "$HINT"
+echo "남은 디스크: $(df -h /workspace | awk 'NR==2 {print $4}')"
