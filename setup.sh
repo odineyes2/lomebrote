@@ -10,6 +10,13 @@ set -e
 #   ./setup.sh qwen          Qwen-Image-Edit 지시문 편집 (SDXL 아님, 단독 실행 가능)
 #   ./setup.sh anime nsfw    둘 다. 겹치는 파일은 한 번만 받는다.
 #   ./setup.sh anime qwen    편집 후 화풍 복원 왕복까지. qwen 은 자동으로 GGUF 가 된다.
+#
+# 20GB 급 파일이 섞이면 반드시 tmux 안에서 돌릴 것. SSH 가 끊겨도 살아남는다.
+#   tmux new -s dl
+#   ./setup.sh anime qwen
+#   (Ctrl+b, d 로 빠져나오고 tmux attach -t dl 로 복귀)
+#
+# 중단되어도 받던 조각(.part)을 남기므로 다시 실행하면 이어받는다.
 
 COMFY=/workspace/runpod-slim/ComfyUI
 BASE=/workspace/shared_models
@@ -17,6 +24,8 @@ PROJ=/workspace/project_lomebrote
 REPO=/workspace/lomebrote
 NODES=$COMFY/custom_nodes
 SELF="$(cd "$(dirname "$0")" && pwd)"
+
+DL_RETRIES=${DL_RETRIES:-5}   # DL_RETRIES=10 ./setup.sh ... 로 조절
 
 PY=""
 for c in /workspace/runpod-slim/venv/bin/python /workspace/venv/bin/python $COMFY/venv/bin/python; do
@@ -88,10 +97,28 @@ fi
 
 echo "프로필: $* / python: $PY / 디스크: $(df -h /workspace | awk 'NR==2 {print $4}')"
 
-echo "[1/5] git"
+# tmux 밖에서 돌리면 SSH 가 끊길 때 다운로드가 같이 죽는다. 경고만 하고 진행한다.
+if [ -z "$TMUX" ] && [ -z "$STY" ] && [ -t 1 ]; then
+  echo ""
+  echo "  ⚠ tmux/screen 밖입니다. 세션이 끊기면 다운로드도 같이 죽습니다."
+  echo "    권장:  tmux new -s dl   후 다시 실행"
+  echo "    중단되어도 .part 는 남으니 재실행하면 이어받습니다."
+  echo ""
+  sleep 3
+fi
+
+echo "[1/5] git · 다운로더"
 git config --global user.email "odineyes2@gmail.com"
 git config --global user.name "odineyes2"
 git config --global credential.helper 'cache --timeout=36000'
+
+# aria2c 는 연결을 16개로 쪼개 받는다. wget 단일 연결 대비 대용량에서 몇 배 빠르다.
+# 설치 실패해도 wget 으로 진행하므로 죽이지 않는다.
+if ! command -v aria2c >/dev/null 2>&1; then
+  echo "  aria2 설치 중..."
+  (apt-get update -qq && apt-get install -y -qq aria2) >/dev/null 2>&1 || echo "  aria2 설치 실패 — wget 으로 진행합니다"
+fi
+command -v aria2c >/dev/null 2>&1 && echo "  다운로더: aria2c (16 연결)" || echo "  다운로더: wget (단일 연결)"
 
 echo "[2/5] 폴더 · 설정"
 # diffusion_models/text_encoders/unet 은 Qwen·Flux 계열용. yaml 에도 같은 키가 있어야 한다.
@@ -142,6 +169,53 @@ c.setdefault("settings", {}).update({
 json.dump(c, open(p, "w"), indent=2, ensure_ascii=False)
 PYEOF
 
+# ── 다운로드 ──────────────────────────────────────
+# 원칙: 실패해도 .part 를 절대 지우지 않는다. 20GB 를 다시 받는 일이 없어야 한다.
+# 지우는 경우는 단 하나 — 다 받았는데 크기가 비정상일 때(HTML 오류 페이지).
+
+download() {
+  local dir="$1" name="$2" url="$3"
+  local dest="$dir/$name" part="$dir/$name.part"
+  local ok=0 try=1
+  mkdir -p "$dir"
+
+  if [ -s "$part" ]; then
+    echo "    이어받기: $(du -h "$part" | cut -f1) 부터"
+  fi
+
+  while [ "$try" -le "$DL_RETRIES" ]; do
+    if command -v aria2c >/dev/null 2>&1; then
+      if aria2c -c -x16 -s16 -k1M \
+                --file-allocation=none --allow-overwrite=true --auto-file-renaming=false \
+                --max-tries=3 --retry-wait=10 --timeout=60 \
+                --console-log-level=warn --summary-interval=60 \
+                -d "$dir" -o "$name.part" "$url"; then ok=1; break; fi
+    else
+      if wget -c --tries=3 --waitretry=10 --read-timeout=60 \
+              --show-progress -q -O "$part" "$url"; then ok=1; break; fi
+    fi
+    echo "    … 실패, 재시도 $try/$DL_RETRIES (받은 부분은 유지)"
+    try=$((try + 1))
+    sleep 10
+  done
+
+  if [ "$ok" -ne 1 ]; then
+    echo "  ! 미완료: $name"
+    echo "    받은 부분을 $part 에 남겨뒀습니다. 스크립트를 다시 실행하면 이어받습니다."
+    return 1
+  fi
+
+  # HTML 오류 페이지를 받으면 크기가 확 작다. 조용히 넘기지 않는다.
+  if [ "$(stat -c%s "$part")" -lt 100000 ]; then
+    rm -f "$part"
+    echo "  ! 크기 이상 — URL 확인 필요: $name"
+    return 1
+  fi
+
+  mv "$part" "$dest"
+  rm -f "$dir/$name.part.aria2"
+}
+
 echo "[5/5] 파일 다운로드"
 for e in "${FILES[@]}"; do
   IFS='|' read -r dir name url <<< "$e"
@@ -151,14 +225,7 @@ for e in "${FILES[@]}"; do
     continue
   fi
   echo "  + $name"
-  mkdir -p "$dir"
-  wget -q --show-progress -O "$dest.part" "$url" \
-    || { rm -f "$dest.part"; echo "  ! 다운로드 실패: $name"; exit 1; }
-  # HTML 오류 페이지를 받으면 크기가 확 작다. 조용히 넘기지 않는다.
-  if [ "$(stat -c%s "$dest.part")" -lt 100000 ]; then
-    rm -f "$dest.part"; echo "  ! 크기 이상 — URL 확인 필요: $name"; exit 1
-  fi
-  mv "$dest.part" "$dest"
+  download "$dir" "$name" "$url" || exit 1
 done
 
 echo ""
