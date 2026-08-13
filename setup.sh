@@ -7,9 +7,9 @@ set -e
 #   ./setup.sh real          실사
 #   ./setup.sh anime         애니 (Illustrious 공식 베이스)
 #   ./setup.sh nsfw          애니 NSFW (WAI)
-#   ./setup.sh qwen          Qwen-Image-Edit 지시문 편집 (SDXL 아님, 단독 실행 가능)
+#   ./setup.sh qwen          Qwen-Image-Edit 2511 지시문 편집 (SDXL 아님, 단독 실행 가능)
 #   ./setup.sh anime nsfw    둘 다. 겹치는 파일은 한 번만 받는다.
-#   ./setup.sh anime qwen    편집 후 화풍 복원 왕복까지. qwen 은 자동으로 GGUF 가 된다.
+#   ./setup.sh anime qwen    편집 후 LoRA 부트스트랩까지. qwen 은 자동으로 GGUF 가 된다.
 #
 # 20GB 급 파일이 섞이면 반드시 tmux 안에서 돌릴 것. SSH 가 끊겨도 살아남는다.
 #   tmux new -s dl
@@ -124,6 +124,9 @@ echo "[2/5] 폴더 · 설정"
 # diffusion_models/text_encoders/unet 은 Qwen·Flux 계열용. yaml 에도 같은 키가 있어야 한다.
 mkdir -p $BASE/{checkpoints,loras,vae,controlnet,upscale_models,clip_vision,ipadapter,embeddings,wd14_tagger,controlnet_aux,diffusion_models,text_encoders,unet}
 mkdir -p $PROJ/{output_keep,depthmaps}
+# LoRA 데이터셋 작업 폴더. raw 에 배치 결과를 쏟고 → 선별해서 keep 으로 옮긴다.
+# caption 은 WD14 태거 출력(.txt)이 이미지와 같은 이름으로 놓이는 자리다.
+mkdir -p $PROJ/dataset/{raw,keep,caption}
 cp $REPO/extra_model_paths.yaml $COMFY/
 mkdir -p $COMFY/user/default/workflows
 cp -n $REPO/workflows/*.json $COMFY/user/default/workflows/ 2>/dev/null || true
@@ -156,13 +159,16 @@ EP_list: ["CPUExecutionProvider"]
 YAMLEOF
 
 # pysssss.json은 저장소 안에 있어 파드마다 초기화된다. settings만 덮어쓴다.
+# 태거는 eva02-large 로 올렸다. swinv2 보다 느리지만 의상·소품 태그 회수율이 높다.
+# 캐릭터 LoRA 는 "의상 태그를 빠짐없이 달아 얼굴과 분리"하는 게 핵심이라 여기서 정확도가 곧 결과다.
+# 가볍게 가려면 wd-swinv2-tagger-v3 로 되돌릴 것.
 CFG=$NODES/ComfyUI-WD14-Tagger/pysssss.json
 [ -f "$CFG" ] && "$PY" - "$CFG" << 'PYEOF'
 import json, sys
 p = sys.argv[1]
 c = json.load(open(p))
 c.setdefault("settings", {}).update({
-    "model": "wd-swinv2-tagger-v3", "threshold": 0.35,
+    "model": "wd-eva02-large-tagger-v3", "threshold": 0.35,
     "character_threshold": 0.85, "replace_underscore": True,
     "exclude_tags": "watermark, signature, artist name, web address, username",
 })
@@ -232,6 +238,7 @@ echo ""
 echo "완료. 파드를 Restart 해야 yaml이 적용됩니다."
 echo "공통: DWPose(torchscript) / DepthAnythingV2(vitl)"
 echo "      깊이맵은 가까울수록 밝음. Blender Z pass는 반대로 나오기 쉽습니다."
+echo "데이터셋: $PROJ/dataset/{raw,keep,caption}"
 if [ -n "$SDXL" ]; then
   echo "SDXL: IPAdapter(ViT-H) — base 와 plus 두 개."
   echo "      base=ip-adapter_sdxl_vit-h(무난), plus=ip-adapter-plus_sdxl_vit-h(강함)."
