@@ -8,8 +8,12 @@ comfyui:
     clip_vision: clip_vision/
     ipadapter: ipadapter/
     embeddings: embeddings/
-    wd14_tagger: wd14_tagger/    
+    wd14_tagger: wd14_tagger/
     diffusion_models: diffusion_models/
-    text_encoders: text_encoders/    
-    unet: unet/    
+    text_encoders: text_encoders/
+    unet: unet/
     clip: text_encoders/
+    sams: sams/
+    ultralytics: ultralytics/
+    ultralytics_bbox: ultralytics/bbox/
+    ultralytics_segm: ultralytics/segm/

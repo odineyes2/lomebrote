@@ -64,6 +64,10 @@ NODE_REPOS=(
   # 원저작자(LucianoCirino) 저장소는 관리 중단. jags111 포크가 유지판이다.
   "efficiency-nodes-comfyui|https://github.com/jags111/efficiency-nodes-comfyui.git|no"
   "ComfyUI_IPAdapter_plus|https://github.com/cubiq/ComfyUI_IPAdapter_plus.git|no"
+  # FaceDetailer. v8.0 부터 UltralyticsDetectorProvider 가 Subpack 으로 분리돼서 둘 다 필요하다.
+  # Subpack 의 requirements 가 ultralytics 를 끌고 온다(아래 pip 루프가 처리).
+  "ComfyUI-Impact-Pack|https://github.com/ltdrdata/ComfyUI-Impact-Pack.git|no"
+  "ComfyUI-Impact-Subpack|https://github.com/ltdrdata/ComfyUI-Impact-Subpack.git|no"
 )
 
 for p in "$@"; do
@@ -80,6 +84,18 @@ if [ -n "$SDXL" ]; then
     "$BASE/clip_vision|CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors|https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors"
     "$BASE/ipadapter|ip-adapter_sdxl_vit-h.safetensors|https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl_vit-h.safetensors"
     "$BASE/ipadapter|ip-adapter-plus_sdxl_vit-h.safetensors|https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors"
+  )
+
+  # FaceDetailer 감지 모델. bbox/ segm/ 하위 폴더 구조가 그대로여야 노드 드롭다운에 뜬다.
+  # 노드에서는 "bbox/face_yolov8m.pt" 처럼 폴더명이 붙은 채로 보인다.
+  # yolov8m(약 52MB) 이 기본. 얼굴이 작은 구도에서는 s 보다 회수율이 낫다.
+  FILES+=(
+    "$BASE/ultralytics/bbox|face_yolov8m.pt|https://huggingface.co/Bingsu/adetailer/resolve/main/face_yolov8m.pt"
+    "$BASE/ultralytics/bbox|hand_yolov8s.pt|https://huggingface.co/Bingsu/adetailer/resolve/main/hand_yolov8s.pt"
+    "$BASE/ultralytics/segm|person_yolov8m-seg.pt|https://huggingface.co/Bingsu/adetailer/resolve/main/person_yolov8m-seg.pt"
+    # SAM. bbox 만으로 충분한 경우가 많아 선택이지만, 머리카락에 걸리는 얼굴 경계를
+    # 정리할 때 sam_model_opt 로 물린다. vit_b 는 375MB 로 vit_h(2.4GB) 대비 가볍다.
+    "$BASE/sams|sam_vit_b_01ec64.pth|https://huggingface.co/segments-arnaud/sam_vit_b/resolve/main/sam_vit_b_01ec64.pth"
   )
 fi
 
@@ -105,7 +121,9 @@ command -v aria2c >/dev/null 2>&1 && echo "  aria2c (16 연결)" || echo "  wget
 
 echo "[2/5] 폴더 · 설정"
 # diffusion_models/text_encoders/unet 은 Qwen 계열용. yaml 에도 같은 키가 있어야 한다.
-mkdir -p $BASE/{checkpoints,loras,vae,controlnet,upscale_models,clip_vision,ipadapter,embeddings,wd14_tagger,controlnet_aux,diffusion_models,text_encoders,unet}
+mkdir -p $BASE/{checkpoints,loras,vae,controlnet,upscale_models,clip_vision,ipadapter,embeddings,wd14_tagger,controlnet_aux,diffusion_models,text_encoders,unet,sams}
+# Impact Subpack 은 ultralytics/ 아래 bbox·segm 을 각각 따로 스캔한다. 평평하게 두면 못 찾는다.
+mkdir -p $BASE/ultralytics/{bbox,segm}
 mkdir -p $PROJ/{output_keep,depthmaps}
 mkdir -p $PROJ/dataset/{raw,keep,caption}
 cp $REPO/extra_model_paths.yaml $COMFY/
@@ -124,8 +142,35 @@ for e in "${NODE_REPOS[@]}"; do
     git clone "$url"
   fi
 done
+# RunPod 이미지는 PIP_CONSTRAINT 로 torch==2.10.0+cu130 을 못박아 둔다.
+# pip 의 빌드 격리 환경은 PyPI 만 보므로 +cu130 로컬 버전 휠을 찾지 못하고,
+# 소스 빌드가 필요한 패키지(Impact Subpack 의 sam2 등)가 ResolutionImpossible 로 죽는다.
+# 이미 설치된 torch 를 그대로 쓰도록 격리를 끄고, 그래도 안 되면 건너뛴다.
+# sam2 는 SAM2 모델 전용이라 FaceDetailer(segment-anything 사용)에는 없어도 된다.
+install_reqs() {
+  local req="$1" name tmp
+  name="$(basename "$(dirname "$req")")"
+  tmp="$(mktemp)"
+  grep -v '^[[:space:]]*\(git+\|-e[[:space:]]\)' "$req" > "$tmp" || true
+  PIP_CONSTRAINT= "$PY" -m pip install -q -r "$tmp" \
+    || echo "  ! requirements 일부 실패: $name"
+  rm -f "$tmp"
+  grep '^[[:space:]]*git+' "$req" 2>/dev/null | while read -r pkg; do
+    PIP_CONSTRAINT= "$PY" -m pip install -q --no-build-isolation "$pkg" \
+      || echo "  ! 선택 의존성 건너뜀: $name → $pkg"
+  done
+}
+
 for req in $NODES/*/requirements.txt; do
-  [ -f "$req" ] && "$PY" -m pip install -q -r "$req"
+  [ -f "$req" ] && install_reqs "$req"
+done
+
+# Impact Pack 은 Manager 가 install.py 를 돌려주는 걸 전제로 만들어져 있다.
+# 손으로 clone 하면 impact-pack.ini 가 안 생겨서 노드가 통째로 로드에 실패한다.
+for ip in ComfyUI-Impact-Pack ComfyUI-Impact-Subpack; do
+  [ -f "$NODES/$ip/install.py" ] || continue
+  (cd "$NODES/$ip" && PIP_CONSTRAINT= "$PY" install.py) \
+    || echo "  ! install.py 실패: $ip (기동 후 콘솔에서 IMPORT FAILED 여부 확인)"
 done
 
 echo "[4/5] 노드 설정"
@@ -250,4 +295,6 @@ done
 
 echo ""
 echo "완료. 파드를 Restart 해야 yaml 이 적용됩니다."
+echo "  ※ extra_model_paths.yaml 에 ultralytics_bbox / ultralytics_segm / sams 키가"
+echo "    없으면 FaceDetailer 의 감지 모델 드롭다운이 빈 채로 뜹니다."
 echo "남은 디스크: $(df -h /workspace | awk 'NR==2 {print $4}')"
