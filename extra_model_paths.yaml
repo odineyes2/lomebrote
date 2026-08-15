@@ -9,11 +9,20 @@ comfyui:
     ipadapter: ipadapter/
     embeddings: embeddings/
     wd14_tagger: wd14_tagger/
+    # Qwen / Wan / LTX 계열 공용
     diffusion_models: diffusion_models/
     text_encoders: text_encoders/
     unet: unet/
     clip: text_encoders/
+    # FaceDetailer
     sams: sams/
     ultralytics: ultralytics/
     ultralytics_bbox: ultralytics/bbox/
     ultralytics_segm: ultralytics/segm/
+    # 영상 모델용. LTX-2.5 의 duration head 가 model_patches,
+    # 공간/시간 x2 업스케일러가 latent_upscale_models 로 배포된다.
+    # 이 두 키가 없으면 공식 템플릿을 로드해도 드롭다운이 빈 채로 뜬다.
+    model_patches: model_patches/
+    latent_upscale_models: latent_upscale_models/
+    # Wan S2V(음성→영상) 계열용. 지금 프로필에서는 안 쓰지만 폴더만 잡아 둔다.
+    audio_encoders: audio_encoders/

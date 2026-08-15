@@ -2,11 +2,16 @@
 # 단독 실행 가능. anime/nsfw/retro 를 같이 지정하는 건 Qwen 의 요구사항이 아니라
 # LoRA 부트스트랩 때문이다.
 #
-# 볼륨 50GB 기준:
-#   qwen + fp8        37GB   ← 24GB GPU 에 맞는 조합
-#   qwen + GGUF       32GB
-#   anime qwen + GGUF 47GB
-#   anime qwen + fp8  52GB → 초과. 그래서 같이 쓰면 자동으로 GGUF.
+# 볼륨 100GB 기준 (50GB 시절 계산은 폐기):
+#   qwen + fp8                       37GB   ← 24GB GPU 에 맞는 조합
+#   qwen + GGUF                      32GB
+#   anime qwen + fp8                 52GB
+#   anime qwen(fp8) + video(5b)      70GB   ← 권장 조합
+#   anime qwen(fp8) + video(14b)     83GB
+#
+# 볼륨이 100GB 로 늘어서 anime + fp8 조합이 이제 들어간다. 예전엔 52GB 라
+# 초과였기 때문에 같이 쓰면 자동으로 GGUF 로 내렸는데, 그 강등은 이제 필요 없다.
+# 다만 video(14b) 나 ltx 를 같이 물리면 다시 빠듯해지므로 그때만 GGUF 로 내린다.
 #
 # 강제 지정: QWEN=fp8|gguf ./setup.sh qwen
 
@@ -14,8 +19,12 @@ QWEN_MODE="${QWEN:-}"
 if [ -z "$QWEN_MODE" ]; then
   QWEN_MODE=fp8
   for _a in "$@"; do
-    case "$_a" in anime|nsfw|real|retro) QWEN_MODE=gguf ;; esac
+    case "$_a" in ltx) QWEN_MODE=gguf ;; esac
   done
+  # video 는 14b 일 때만 무겁다. 5b(기본)면 fp8 을 유지해도 된다.
+  case " $* " in
+    *" video "*) [ "${VIDEO:-}" = "14b" ] && QWEN_MODE=gguf ;;
+  esac
 fi
 
 if [ "$QWEN_MODE" = "fp8" ]; then
