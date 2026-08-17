@@ -1,0 +1,209 @@
+{
+  "1": {
+    "inputs": {
+      "ckpt_name": "WAI-illustrious-SDXL.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "체크포인트 로드"
+    }
+  },
+  "2": {
+    "inputs": {
+      "text": "8k, hdr, masterpiece, best quality, amazing quality, very aesthetic, absurdres, film noire",
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "base_quality_tags"
+    }
+  },
+  "3": {
+    "inputs": {
+      "text": "worst quality, low quality, bad anatomy, bad hands, text, jpeg artifacts,watermark, signature, text, head out of frame, cropped head, out of frame, close-up, breast",
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "negative_prompt"
+    }
+  },
+  "4": {
+    "inputs": {
+      "seed": 455391606558441,
+      "steps": 28,
+      "cfg": 6,
+      "sampler_name": "euler_ancestral",
+      "scheduler": "simple",
+      "denoise": 1,
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "20",
+        0
+      ],
+      "negative": [
+        "3",
+        0
+      ],
+      "latent_image": [
+        "25",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "8": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "scale_by": 1.5,
+      "samples": [
+        "4",
+        0
+      ]
+    },
+    "class_type": "LatentUpscaleBy",
+    "_meta": {
+      "title": "잠재 데이터 크기 배율 조정"
+    }
+  },
+  "9": {
+    "inputs": {
+      "seed": 577855963046088,
+      "steps": 28,
+      "cfg": 6,
+      "sampler_name": "euler_ancestral",
+      "scheduler": "simple",
+      "denoise": 0.5,
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "20",
+        0
+      ],
+      "negative": [
+        "3",
+        0
+      ],
+      "latent_image": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "10": {
+    "inputs": {
+      "samples": [
+        "9",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE 디코드"
+    }
+  },
+  "11": {
+    "inputs": {
+      "filename_prefix": "260818_WAI-illustrious-SDXL.safetensors_577855963046088_hires_",
+      "images": [
+        "10",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "이미지 저장"
+    }
+  },
+  "17": {
+    "inputs": {
+      "conditioning_to": [
+        "2",
+        0
+      ],
+      "conditioning_from": [
+        "18",
+        0
+      ]
+    },
+    "class_type": "ConditioningConcat",
+    "_meta": {
+      "title": "조건 (연결)"
+    }
+  },
+  "18": {
+    "inputs": {
+      "text": "1girl, solo, full body, looking at viewer, expressionless,\nclosed mouth, orange eyes, mature female, orange hair, long hair,\nyellow cyberpunk jacket, dark grey mechanic suit, standing,\nrooftop, blue hour",
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "subject_prompt"
+    }
+  },
+  "19": {
+    "inputs": {
+      "text": "artistic composition, high detail, masterwork, newest, detailed, detailed fingers, raytracing, ambient occlusion, perfect anatomy",
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "detail_tags"
+    }
+  },
+  "20": {
+    "inputs": {
+      "conditioning_to": [
+        "17",
+        0
+      ],
+      "conditioning_from": [
+        "19",
+        0
+      ]
+    },
+    "class_type": "ConditioningConcat",
+    "_meta": {
+      "title": "조건 (연결)"
+    }
+  },
+  "25": {
+    "inputs": {
+      "width": 1000,
+      "height": 1024,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "빈 잠재 이미지"
+    }
+  }
+}
