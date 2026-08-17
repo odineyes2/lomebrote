@@ -52,6 +52,8 @@ else
     # high/low 각각에 짝을 맞춰 물릴 것. 섞으면 모션이 뭉갠다.
     "$BASE/loras|wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors|https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors"
     "$BASE/loras|wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors|https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors"
+     "$BASE/loras|wan2.2_i2v_anime_style_v2_low_noise.safetensors|https://civitai.com/api/download/models/2516839?fileId=2404581"
+    "$BASE/loras|wan2.2_i2v_anime_style_v2_high_noise.safetensors|https://civitai.com/api/download/models/2516837?fileId=2404577"
   )
 fi
 
