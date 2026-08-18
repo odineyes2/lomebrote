@@ -76,3 +76,17 @@ def download_image(filename: str, subfolder: str = "", img_type: str = "output")
     resp = requests.get(f"{SERVER}/view", params=params)
     resp.raise_for_status()
     return resp.content
+
+def get_node_title(workflow: dict, node_id: str) -> str:
+    node = workflow.get(node_id, {})
+    return node.get("_meta", {}).get("title", f"노드 {node_id}")
+
+
+def print_progress_bar(label: str, current: int, total: int, bar_width: int = 30):
+    import sys
+    ratio = current / total if total else 0
+    filled = int(bar_width * ratio)
+    bar = "█" * filled + "░" * (bar_width - filled)
+    percent = ratio * 100
+    sys.stdout.write(f"\r    {label:<12} |{bar}| {current}/{total} ({percent:5.1f}%)")
+    sys.stdout.flush()
