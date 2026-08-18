@@ -1,4 +1,4 @@
-import requests, json, time
+import requests, json, time, uuid  
 from pathlib import Path
 
 SERVER = "http://127.0.0.1:8188"
@@ -44,10 +44,10 @@ def set_framing(workflow: dict, preset_name: str) -> dict:
     return workflow
 
 
-def queue_prompt(workflow: dict) -> str:
-    resp = requests.post(f"{SERVER}/prompt", json={"prompt": workflow})
-    resp.raise_for_status()
-    return resp.json()["prompt_id"]
+# def queue_prompt(workflow: dict) -> str:
+#     resp = requests.post(f"{SERVER}/prompt", json={"prompt": workflow})
+#     resp.raise_for_status()
+#     return resp.json()["prompt_id"]
 
 
 def wait_for_result(prompt_id: str, timeout_s: int = 120) -> dict:
@@ -58,3 +58,21 @@ def wait_for_result(prompt_id: str, timeout_s: int = 120) -> dict:
             return history[prompt_id]["outputs"]
         time.sleep(2)
     raise TimeoutError("생성이 시간 내에 끝나지 않음")
+
+def generate_client_id() -> str:
+    return str(uuid.uuid4())
+
+
+def queue_prompt(workflow: dict, client_id: str = None) -> str:
+    payload = {"prompt": workflow}
+    if client_id:
+        payload["client_id"] = client_id
+    resp = requests.post(f"{SERVER}/prompt", json=payload)
+    resp.raise_for_status()
+    return resp.json()["prompt_id"]
+
+def download_image(filename: str, subfolder: str = "", img_type: str = "output") -> bytes:
+    params = {"filename": filename, "subfolder": subfolder, "type": img_type}
+    resp = requests.get(f"{SERVER}/view", params=params)
+    resp.raise_for_status()
+    return resp.content
