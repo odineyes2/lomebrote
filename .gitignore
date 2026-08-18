@@ -6,3 +6,4 @@ __pycache__/
 *.pyc
 comfy_scripts/results/
 comfy_scripts/ref/
+comfy_scripts/trash/
