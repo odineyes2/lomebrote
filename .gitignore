@@ -2,3 +2,6 @@
 *.token
 *.safetensors
 .ipynb_checkpoints/
+__pycache__/
+*.pyc
+comfy_scripts/results/
