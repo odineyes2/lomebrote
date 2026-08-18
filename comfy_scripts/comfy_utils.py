@@ -2,11 +2,16 @@ import requests, json, time, uuid
 from pathlib import Path
 
 SERVER = "http://127.0.0.1:8188"
-WORKFLOW_PATH = Path(__file__).parent / "workflow_api.json"
+# WORKFLOW_PATH = Path(__file__).parent / "workflow_api.json"
 
 
-def load_workflow() -> dict:
-    with open(WORKFLOW_PATH) as f:
+# def load_workflow() -> dict:
+#     with open(WORKFLOW_PATH) as f:
+#         return json.load(f)
+
+def load_workflow(filename: str = "workflow_api.json") -> dict:
+    path = Path(__file__).parent / filename
+    with open(path) as f:
         return json.load(f)
 
 

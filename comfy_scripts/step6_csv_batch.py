@@ -8,6 +8,15 @@ from comfy_utils import (
 )
 import requests 
 from comfy_utils import SERVER
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--workflow", default="workflow_api.json", help="사용할 워크플로우 API JSON 파일명")
+parser.add_argument("--csv", default="batch_list.csv", help="배치 목록 CSV 파일명")
+args = parser.parse_args()
+
+base_workflow = load_workflow(args.workflow)
+CSV_PATH = Path(__file__).parent / args.csv
 
 CSV_PATH = Path(__file__).parent / "batch_list.csv"
 OUTPUT_DIR = Path(__file__).parent / "results"
