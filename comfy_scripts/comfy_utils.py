@@ -90,3 +90,7 @@ def print_progress_bar(label: str, current: int, total: int, bar_width: int = 30
     percent = ratio * 100
     sys.stdout.write(f"\r    {label:<12} |{bar}| {current}/{total} ({percent:5.1f}%)")
     sys.stdout.flush()
+
+def get_output_image_info(workflow: dict, outputs: dict, title: str = "final_output") -> dict:
+    node_id = find_node_by_title(workflow, title)
+    return outputs[node_id]["images"][0]

@@ -4,8 +4,10 @@ import websocket
 from comfy_utils import (
     load_workflow, set_subject_prompt, set_seed,
     queue_prompt, download_image, generate_client_id,
-    get_node_title, print_progress_bar
+    get_node_title, print_progress_bar, get_output_image_info
 )
+import requests 
+from comfy_utils import SERVER
 
 CSV_PATH = Path(__file__).parent / "batch_list.csv"
 OUTPUT_DIR = Path(__file__).parent / "results"
@@ -59,10 +61,9 @@ for i, row in enumerate(rows, 1):
             print(f"\n    ▶ {title}")
 
     outputs_resp = None
-    import requests
-    from comfy_utils import SERVER
+    
     outputs_resp = requests.get(f"{SERVER}/history/{prompt_id}").json()
-    img_info = outputs_resp[prompt_id]["outputs"]["11"]["images"][0]
+    img_info = get_output_image_info(workflow, outputs_resp[prompt_id]["outputs"])
     img_bytes = download_image(img_info["filename"], img_info.get("subfolder", ""))
 
     save_path = OUTPUT_DIR / f"{page_id}_{seed}.png"

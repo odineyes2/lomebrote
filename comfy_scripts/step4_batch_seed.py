@@ -1,5 +1,5 @@
 import json, random
-from comfy_utils import load_workflow, set_seed, queue_prompt, wait_for_result
+from comfy_utils import load_workflow, set_seed, queue_prompt, wait_for_result,get_output_image_info
 
 base_workflow = load_workflow()
 
@@ -13,7 +13,9 @@ for i in range(10):
     print(f"[{i+1}/10] 제출됨 (seed={seed}) → {prompt_id}")
 
     outputs = wait_for_result(prompt_id)
-    filename = outputs["11"]["images"][0]["filename"]
+    
+    img_info = get_output_image_info(workflow, outputs)
+    filename = img_info["filename"]
     print(f"   완료: {filename}")
     results.append({"seed": seed, "filename": filename})
 
