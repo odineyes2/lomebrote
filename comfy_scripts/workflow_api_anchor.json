@@ -10,7 +10,7 @@
   },
   "2": {
     "inputs": {
-      "text": "8k, hdr, masterpiece, best quality, amazing quality, very aesthetic, absurdres, film noire",
+      "text": "masterpiece, best quality, amazing quality, very aesthetic, absurdres, film noire",
       "clip": [
         "1",
         1
@@ -126,7 +126,7 @@
   },
   "11": {
     "inputs": {
-      "filename_prefix": "260818_WAI-illustrious-SDXL.safetensors_577855963046088_hires_",
+      "filename_prefix": "260818_WAI-illustrious-SDXL.safetensors_455391606558441_hires_",
       "images": [
         "10",
         0
@@ -134,7 +134,7 @@
     },
     "class_type": "SaveImage",
     "_meta": {
-      "title": "이미지 저장"
+      "title": "final_output"
     }
   },
   "17": {
@@ -155,7 +155,7 @@
   },
   "18": {
     "inputs": {
-      "text": "1girl, solo, long orange hair, straight hair, blunt bangs, violet eyes, pointy ears, pale skin, yellow jacket, open jacket, high collar, cropped jacket, dark grey jumpsuit, upper body, facing viewer, front view, looking at viewer, symmetrical, arms at sides, neutral expression, closed mouth, even lighting, flat lighting, no cast shadow, simple background, white background,",
+      "text": "1girl, solo, mature female, long orange hair, straight hair, swept bangs, brown eyes, yellow jacket, open jacket, high collar, cropped jacket, dark grey jumpsuit, knee boots, full body, standing, feet apart, facing viewer, front view, looking at viewer, symmetrical, arms at sides, neutral expression, closed mouth, even lighting, flat lighting, no cast shadow, simple background, white background,",
       "clip": [
         "1",
         1
