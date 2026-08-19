@@ -12,6 +12,7 @@ set -e
 #   ./setup.sh ltx             LTX-2.5 (실험적, HF 토큰 필요)
 #   ./setup.sh anime qwen      부트스트랩. qwen 은 자동으로 GGUF.
 #   ./setup.sh anime video     부트스트랩. video 는 자동으로 5B.
+#   ./setup.sh krea            Krea 2 Turbo t2i (SDXL 아님, 단독 실행 가능)
 #
 # 볼륨 100GB 기준 조합별 누계는 각 프로필 파일 상단 주석에 있다.
 # 권장: anime + qwen(fp8) + video(5b) = 70GB.
