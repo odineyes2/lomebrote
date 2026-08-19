@@ -19,10 +19,6 @@
 #
 # 볼륨 100GB 기준 (누계):
 #   krea 단독                                19GB
-#   anime + krea                             34GB
-#   anime + qwen(fp8) + krea                 71GB   ← VAE 공유라 겹치는 만큼 덜 든다
-#   anime + qwen(fp8) + video(5b) + krea     89GB   ← 남는 11GB, 출력물 쌓이면 위험
-#   ltx 와 같이 쓰지 말 것. 영상은 파드를 분리하는 게 편하다.
 #
 # 강제 지정: KREA=raw ./setup.sh krea
 # 스타일 LoRA 9종까지: KREA_LORAS=1 ./setup.sh krea
@@ -56,11 +52,11 @@ case "$KREA_MODE" in
 esac
 
 # 모드와 무관하게 공유. turbo <-> raw 를 오가도 다시 받지 않는다.
-FILES+=(
-  # Qwen3-VL 4B. T5 도 CLIP 도 아니다. 태그 나열이 아니라 문장으로 쓰는 이유가 이것.
-  "$BASE/text_encoders|qwen3vl_4b_fp8_scaled.safetensors|$KREA_REPO/text_encoders/qwen3vl_4b_fp8_scaled.safetensors"
-  # Qwen-Image 와 동일 VAE. qwen 프로필과 파일명이 같아 중복 다운로드는 안 일어난다.
+FILES+=(  
+  "$BASE/text_encoders|qwen3vl_4b_fp8_scaled.safetensors|$KREA_REPO/text_encoders/qwen3vl_4b_fp8_scaled.safetensors"  
   "$BASE/vae|qwen_image_vae.safetensors|$KREA_REPO/vae/qwen_image_vae.safetensors"
+  "$BASE/loras|Krea2MythD4rkL1nes.safetensors|https://civitai.com/api/download/models/3165227?fileId=3045636"
+  "$BASE/loras|Niji_Sweet_Spot_Krea2_v2A.safetensors|https://civitai.com/api/download/models/3210573?fileId=3092284"
 )
 
 # 공식 스타일 LoRA 9종. 각각 트리거 워드를 프롬프트 맨 앞에 넣어야 걸린다(강도 1.0 기준).
@@ -79,3 +75,4 @@ if [ -n "${KREA_LORAS:-}" ]; then
     FILES+=("$BASE/loras|krea2_${_l}.safetensors|$KREA_REPO/loras/krea2_${_l}.safetensors")
   done
 fi
+
