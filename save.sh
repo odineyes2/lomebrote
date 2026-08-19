@@ -4,23 +4,27 @@ COMFY=/workspace/runpod-slim/ComfyUI
 REPO=/workspace/lomebrote
 SRC=$COMFY/user/default/workflows
 
-# nullglob: 매칭되는 json이 없을 때 '*.json' 문자열 대신 빈 배열이 되도록
-shopt -s nullglob
-files=("$SRC"/*.json)
-shopt -u nullglob
+# 하위 폴더까지 재귀적으로 json 파일 탐색
+mapfile -t files < <(find "$SRC" -type f -name "*.json")
 
-# 경우 1) ComfyUI에 저장된 워크플로우 자체가 없음
+# 경우 1) 저장된 워크플로우가 하나도 없음
 if [ ${#files[@]} -eq 0 ]; then
   echo "저장된 워크플로우가 없습니다. (확인 경로: $SRC)"
   exit 0
 fi
 
-cp -u "${files[@]}" "$REPO/workflows/"
+# 상대 경로(하위 폴더 구조)를 유지하며 복사
+for f in "${files[@]}"; do
+  rel="${f#$SRC/}"                  # SRC 기준 상대경로 (예: subdir/foo.json)
+  dest="$REPO/workflows/$rel"
+  mkdir -p "$(dirname "$dest")"     # 필요한 하위 폴더 생성
+  cp -u "$f" "$dest"
+done
+
 cd $REPO
 git add .
 
 # 경우 2) json은 있지만 이미 전부 백업되어 새 변경이 없음
-# git diff --cached --quiet : 스테이징된 변경이 없으면 0, 있으면 1을 반환
 if git diff --cached --quiet; then
   echo "새로 추가되거나 변경된 워크플로우가 없습니다. 커밋할 것이 없습니다."
   exit 0

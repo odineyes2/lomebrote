@@ -10,6 +10,12 @@ FILES+=(
     "$BASE/vae|wan_2.1_vae.safetensors|https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors"    
     "$BASE/loras|SmoothXXXAnimation_High.safetensors|https://civitai.red/api/download/models/2376136?fileId=2266910"
     "$BASE/loras|SmoothXXXAnimation_Low.safetensors|https://civitai.red/api/download/models/2376143?fileId=2266915"
+    "$BASE/loras|bounce_test_HighNoise-000005.safetensors|https://civitai.red/api/download/models/2209354?fileId=2102358"
+    "$BASE/loras|bounce_test_LowNoise-000005.safetensors|https://civitai.red/api/download/models/2209344?fileId=2102313"
+    "$BASE/loras|DR34ML4Y_I2V_14B_HIGH_V2.safetensors|https://civitai.red/api/download/models/2553151?fileId=2441563"
+    "$BASE/loras|DR34ML4Y_I2V_14B_LOW_V2.safetensors|https://civitai.red/api/download/models/2303113?fileId=2194029"
+    "$BASE/loras|wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors|https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors"
+    "$BASE/loras|wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors|https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors"
 )
 
 # 텍스트 인코더는 두 모드 공유. 2.1 저장소에 있다(2.2 리포에 중복 배치 안 함). 약 6.7GB.
