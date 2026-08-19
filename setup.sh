@@ -158,7 +158,8 @@ mkdir -p $PROJ/dataset/{raw,keep,caption}
 mkdir -p $PROJ/{video_in,video_out}
 cp $REPO/extra_model_paths.yaml $COMFY/
 mkdir -p $COMFY/user/default/workflows
-cp -n $REPO/workflows/*.json $COMFY/user/default/workflows/ 2>/dev/null || true
+# cp -n $REPO/workflows/*.json $COMFY/user/default/workflows/ 2>/dev/null || true
+cp -rn $REPO/workflows/. $COMFY/user/default/workflows/ 2>/dev/null || true
 
 echo "[3/5] 커스텀 노드"
 mkdir -p $NODES && cd $NODES
