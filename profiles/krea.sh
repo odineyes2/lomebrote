@@ -57,6 +57,7 @@ FILES+=(
   "$BASE/vae|qwen_image_vae.safetensors|$KREA_REPO/vae/qwen_image_vae.safetensors"
   "$BASE/loras|Krea2MythD4rkL1nes.safetensors|https://civitai.com/api/download/models/3165227?fileId=3045636"
   "$BASE/loras|Niji_Sweet_Spot_Krea2_v2A.safetensors|https://civitai.com/api/download/models/3210573?fileId=3092284"
+  "$BASE/loras|snofs_krea_v1_1.safetensors|https://civitai.red/api/download/models/3104629?fileId=2984442"  
 )
 
 # 공식 스타일 LoRA 9종. 각각 트리거 워드를 프롬프트 맨 앞에 넣어야 걸린다(강도 1.0 기준).
