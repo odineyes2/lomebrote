@@ -110,6 +110,9 @@ apt-get update -qq && apt-get install -y -qq tmux
 | `qwen` | Qwen-Image-Edit 2511 — 지시문 기반 편집 | 독립 |
 | `video` | Wan 2.2 — i2v 영상 생성 | 독립 |
 | `ltx` | LTX-2.5 — 영상+오디오 동시 생성 (실험적) | 독립 |
+| `krea` | Krea 2 Turbo — 지시문 기반 t2i (turbo/int8/raw) | 독립 |
+| `dasiwa` | Wan 2.2 I2V DaSiWa-TastySin GGUF (NSFW LoRA 세트) | Wan 2.2 MoE |
+| `smooth` | Wan 2.2 I2V SmoothMix (애니/실사 스타일 LoRA 세트) | Wan 2.2 MoE |
 
 여러 개를 동시에 지정할 수 있고, 겹치는 파일은 한 번만 받는다.
 
@@ -133,11 +136,182 @@ Illustrious 계열에는 계열을 맞춘 것. 반대로 물리면 화풍이 끌
 | `qwen` | `QWEN` | `fp8` (20.5GB) / `gguf` (Q5\_K\_M, 15GB) | `fp8`, `ltx`나 `video=14b`와 함께면 `gguf` |
 | `video` | `VIDEO` | `5b` (TI2V 단일) / `14b` (I2V MoE) | `14b`, 다른 프로필과 함께면 `5b` |
 | `ltx` | `LTX` | `distilled` (8스텝) / `dev` (학습 가능) | `distilled` |
+| `krea` | `KREA` | `turbo` (8스텝) / `int8` (스타일 레퍼런스) / `raw` (52스텝, 학습용) | `turbo` |
+| `krea` | `KREA_LORAS` | `1`이면 공식 스타일 LoRA 9종까지 함께 받음 | 미설정 |
 
 ```bash
 VIDEO=14b ./setup.sh video
 QWEN=gguf ./setup.sh anime qwen
 ```
+
+---
+
+## 프로필별 설치 파일
+
+`setup.sh`가 실제로 받는 파일은 **공통분** → **SDXL 계열 공통분** → **프로필 고유분** 순으로 쌓인다.
+아래는 `profiles/*.sh`를 그대로 반영한 현재 목록이다 (경로는 전부 `$BASE` = `/workspace/shared_models` 기준 상대경로).
+
+### 공통 — 모든 프로필
+
+전처리기 가중치. 프로필과 무관하게 항상 받는다 (약 1.9GB).
+
+| 폴더 | 파일 | 용도 |
+| --- | --- | --- |
+| `controlnet_aux/hr16/yolox-onnx` | `yolox_l.torchscript.pt` | DWPose 인물 검출 (GPU) |
+| `controlnet_aux/hr16/DWPose-TorchScript-BatchSize5` | `dw-ll_ucoco_384_bs5.torchscript.pt` | DWPose 골격 추정 (GPU) |
+| `controlnet_aux/yzd-v/DWPose` | `yolox_l.onnx` | DWPose 폴백 (CPU) |
+| `controlnet_aux/depth-anything/Depth-Anything-V2-Large` | `depth_anything_v2_vitl.pth` | 깊이맵 추출 (1.3GB) |
+
+### 공통 — SDXL 계열 (`real` / `anime` / `nsfw` / `retro`)
+
+`SDXL=1`을 선언한 프로필에서만 추가로 받는다 (약 4.5GB).
+
+| 폴더 | 파일 | 용도 |
+| --- | --- | --- |
+| `clip_vision` | `CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors` | IP-Adapter 클립 인코더 |
+| `ipadapter` | `ip-adapter_sdxl_vit-h.safetensors` | IP-Adapter (기본) |
+| `ipadapter` | `ip-adapter-plus_sdxl_vit-h.safetensors` | IP-Adapter Plus |
+| `ultralytics/bbox` | `face_yolov8m.pt` | FaceDetailer 얼굴 검출 |
+| `ultralytics/bbox` | `hand_yolov8s.pt` | FaceDetailer 손 검출 |
+| `ultralytics/segm` | `person_yolov8m-seg.pt` | FaceDetailer 인물 세그멘테이션 |
+| `sams` | `sam_vit_b_01ec64.pth` | 얼굴 경계 정리용 SAM (선택 사용) |
+
+### `real` — RealVisXL V5.0
+
+| 폴더 | 파일 |
+| --- | --- |
+| `checkpoints` | `RealVisXL_V5.0_fp16.safetensors` |
+| `upscale_models` | `4x-UltraSharpV2.pth` |
+| `controlnet` | `xinsir_openpose.safetensors` |
+| `controlnet` | `xinsir_depth.safetensors` |
+| `controlnet` | `xinsir_scribble.safetensors` |
+| `controlnet` | `xinsir_canny.safetensors` |
+
+### `anime` — Illustrious XL v1.1
+
+| 폴더 | 파일 |
+| --- | --- |
+| `checkpoints` | `Illustrious-XL-v1.1.safetensors` |
+| `upscale_models` | `4x-AnimeSharp.pth` |
+| `controlnet` | `Illustrious_openpose.safetensors` |
+| `controlnet` | `NoobAI_depth_midas.safetensors` |
+| `controlnet` | `Illustrious_lineart_anime.safetensors` |
+| `wd14_tagger` | `wd-swinv2-tagger-v3.onnx` |
+| `wd14_tagger` | `wd-swinv2-tagger-v3.csv` |
+
+### `nsfw` — WAI-illustrious
+
+ControlNet·업스케일러·태거는 `anime`과 동일한 파일을 공유한다.
+
+| 폴더 | 파일 | 비고 |
+| --- | --- | --- |
+| `checkpoints` | `WAI-illustrious-SDXL.safetensors` | civitai.red, `CIVITAI_TOKEN` 필요 |
+| *(위 anime 표와 동일)* | 업스케일러 1 · ControlNet 3 · 태거 2 | — |
+
+### `retro` — Retrordinary
+
+ControlNet·업스케일러·태거는 `anime`과 동일한 파일을 공유한다.
+
+| 폴더 | 파일 | 비고 |
+| --- | --- | --- |
+| `checkpoints` | `TC-RetrordinaryFinalVAELiq.safetensors` | civitai.red 미러 (civitai #2113 403 회피) |
+| *(위 anime 표와 동일)* | 업스케일러 1 · ControlNet 3 · 태거 2 | — |
+
+### `qwen` — Qwen-Image-Edit 2511
+
+| 폴더 | 파일 | 비고 |
+| --- | --- | --- |
+| `diffusion_models` | `qwen_image_edit_2511_fp8mixed.safetensors` | `QWEN=fp8`, 20.5GB |
+| `unet` | `qwen-image-edit-2511-Q5_K_M.gguf` | `QWEN=gguf`, 15GB |
+| `text_encoders` | `qwen_2.5_vl_7b_fp8_scaled.safetensors` | 두 모드 공유 |
+| `vae` | `qwen_image_vae.safetensors` | 두 모드 공유 |
+| `loras` | `Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors` | 4스텝 증류 LoRA |
+| `loras` | `qwen-image-edit-2511-multiple-angles-lora.safetensors` | 다각도 LoRA |
+
+커스텀 노드: `ComfyUI-GGUF` (fp8 모드에서도 미리 설치)
+
+### `video` — Wan 2.2 i2v
+
+| 폴더 | 파일 | 비고 |
+| --- | --- | --- |
+| `diffusion_models` | `wan2.2_ti2v_5B_fp16.safetensors` | `VIDEO=5b` |
+| `vae` | `wan2.2_vae.safetensors` | `VIDEO=5b` 전용 VAE |
+| `diffusion_models` | `wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors` | `VIDEO=14b`, MoE high |
+| `diffusion_models` | `wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors` | `VIDEO=14b`, MoE low |
+| `vae` | `wan_2.1_vae.safetensors` | `VIDEO=14b` 전용 VAE |
+| `loras` | `wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors` | `VIDEO=14b`, 4스텝 증류 |
+| `loras` | `wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors` | `VIDEO=14b`, 4스텝 증류 |
+| `loras` | `wan2.2_i2v_anime_style_v2_high_noise.safetensors` | `VIDEO=14b`, civitai |
+| `loras` | `wan2.2_i2v_anime_style_v2_low_noise.safetensors` | `VIDEO=14b`, civitai |
+| `text_encoders` | `umt5_xxl_fp8_e4m3fn_scaled.safetensors` | 두 모드 공유, 6.7GB |
+
+커스텀 노드: `ComfyUI-VideoHelperSuite`
+
+### `ltx` — LTX-2.5 (실험적)
+
+| 폴더 | 파일 | 비고 |
+| --- | --- | --- |
+| `diffusion_models` | `ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors` | `LTX=distilled` (기본) |
+| `diffusion_models` | `ltx-2.5-22b-dev-transformer-comfy-int8-convrot.safetensors` | `LTX=dev` |
+| `loras` | `ltx-2.5-22b-distilled-lora-450-bf16.safetensors` | `LTX=dev`, 증류 스케줄용 |
+| `text_encoders` | `gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors` | Gemma 4 12B 기반, T5 아님 |
+| `vae` | `ltx-2.5-video-vae-conv-bf16.safetensors` | 영상 VAE |
+| `vae` | `ltx-2.5-audio-vae-bf16.safetensors` | 오디오 VAE |
+| `model_patches` | `ltx-2.5-duration-head-bf16.safetensors` | 길이(duration) 헤드 |
+| `latent_upscale_models` | `ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors` | 공간 2배 업스케일 |
+| `latent_upscale_models` | `ltx-2.5-latent-temporal-upscaler-x2-bf16-1.0.safetensors` | 시간 2배 업스케일 |
+
+커스텀 노드: `ComfyUI-VideoHelperSuite` · `NEED_HF_TOKEN=1` (게이트 저장소, 약관 동의 선행 필요)
+
+### `krea` — Krea 2 Turbo t2i
+
+| 폴더 | 파일 | 비고 |
+| --- | --- | --- |
+| `diffusion_models` | `krea2_turbo_fp8_scaled.safetensors` | `KREA=turbo` (기본) |
+| `diffusion_models` | `krea2_turbo_int8_convrot.safetensors` | `KREA=int8` |
+| `loras` | `krea2_style_reference.safetensors` | `KREA=int8`, 스타일 레퍼런스 템플릿 전용 |
+| `diffusion_models` | `krea2_raw_fp8_scaled.safetensors` | `KREA=raw` |
+| `loras` | `krea2_turbo_lora_rank_64_bf16.safetensors` | `KREA=raw` |
+| `text_encoders` | `qwen3vl_4b_fp8_scaled.safetensors` | 모드 공유 |
+| `vae` | `qwen_image_vae.safetensors` | 모드 공유 |
+| `loras` | `Krea2MythD4rkL1nes.safetensors` | 모드 공유, civitai |
+| `loras` | `Niji_Sweet_Spot_Krea2_v2A.safetensors` | 모드 공유, civitai |
+| `loras` | `krea2_{darkbrush,dotmatrix,kidsdrawing,neondrip,rainywindow,retroanime,softwatercolor,sunsetblur,vintagetarot}.safetensors` | `KREA_LORAS=1`일 때만, 공식 스타일 9종 |
+
+### `dasiwa` — Wan 2.2 I2V DaSiWa-TastySin
+
+| 폴더 | 파일 | 비고 |
+| --- | --- | --- |
+| `diffusion_models` | `Wan2_2-I2V-High-DaSiWa-TastySin-q8.gguf.safetensors` | MoE high, civitai.red |
+| `diffusion_models` | `Wan2_2-I2V-Low-DaSiWa-TastySin-q8.gguf.safetensors` | MoE low, civitai.red |
+| `vae` | `wan_2.1_vae.safetensors` | |
+| `loras` | `NSFW-22-H-e8.safetensors` | |
+| `loras` | `bounce_test_HighNoise-000005.safetensors` | |
+| `loras` | `bounce_test_LowNoise-000005.safetensors` | |
+| `loras` | `DR34ML4Y_I2V_14B_HIGH_V2.safetensors` | |
+| `loras` | `DR34ML4Y_I2V_14B_LOW_V2.safetensors` | |
+| `text_encoders` | `umt5_xxl_fp8_e4m3fn_scaled.safetensors` | |
+
+커스텀 노드: `ComfyUI-VideoHelperSuite`
+
+### `smooth` — Wan 2.2 I2V SmoothMix
+
+| 폴더 | 파일 | 비고 |
+| --- | --- | --- |
+| `diffusion_models` | `SmoothMix_I2V_High_v2.safetensors` | MoE high, civitai.red |
+| `diffusion_models` | `SmoothMix_I2V_Low_v2.safetensors` | MoE low, civitai.red |
+| `vae` | `wan_2.1_vae.safetensors` | |
+| `loras` | `SmoothXXXAnimation_High.safetensors` | |
+| `loras` | `SmoothXXXAnimation_Low.safetensors` | |
+| `loras` | `bounce_test_HighNoise-000005.safetensors` | |
+| `loras` | `bounce_test_LowNoise-000005.safetensors` | |
+| `loras` | `DR34ML4Y_I2V_14B_HIGH_V2.safetensors` | |
+| `loras` | `DR34ML4Y_I2V_14B_LOW_V2.safetensors` | |
+| `loras` | `wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors` | |
+| `loras` | `wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors` | |
+| `text_encoders` | `umt5_xxl_fp8_e4m3fn_scaled.safetensors` | |
+
+커스텀 노드: `ComfyUI-VideoHelperSuite`
 
 ---
 
@@ -154,11 +328,14 @@ QWEN=gguf ./setup.sh anime qwen
 | `./setup.sh video` (5b) | ~18GB |
 | `./setup.sh video` (14b) | ~32GB |
 | `./setup.sh ltx` | ~40GB |
+| `./setup.sh krea` (turbo) | ~19GB |
 | `./setup.sh anime qwen` (fp8) | ~52GB |
 | **`./setup.sh anime qwen video`** | **~70GB** ← 권장 |
 | `VIDEO=14b ./setup.sh anime qwen video` | ~78GB (qwen 자동 gguf) |
 
 `ltx`는 `qwen`과 함께 쓰지 않는 편이 낫다. 영상 전용 파드로 분리하는 게 편하다.
+
+`dasiwa`/`smooth`는 각각 diffusion_models 2개(고/저노이즈) + LoRA 6~7종 조합으로, 단독 실행 시 대략 20GB대 후반(diffusion_models ~14GB + LoRA ~4GB + 공유 text_encoder ~6.7GB)이지만 프로필 파일에 공식 누계가 기록돼 있지 않다.
 
 - **볼륨 100GB / 컨테이너 20\~30GB** 권장
 - 모델은 전부 `/workspace` 아래로 간다 → **볼륨**이 늘어나야 한다
@@ -204,6 +381,8 @@ CIVITAI_TOKEN=xxxx ./setup.sh nsfw
 | `QWEN` | 자동 | `fp8` / `gguf` |
 | `VIDEO` | 자동 | `5b` / `14b` |
 | `LTX` | `distilled` | `distilled` / `dev` |
+| `KREA` | `turbo` | `turbo` / `int8` / `raw` |
+| `KREA_LORAS` | 미설정 | `1`이면 공식 스타일 LoRA 9종 추가 |
 | `CIVITAI_TOKEN` | `/workspace/.civitai_token` | civitai 인증 |
 | `HF_TOKEN` | `/workspace/.hf_token` | HF 게이트 저장소 인증 |
 | `DL_RETRIES` | `5` | 파일당 재시도 횟수 |
