@@ -113,6 +113,7 @@ apt-get update -qq && apt-get install -y -qq tmux
 | `krea` | Krea 2 Turbo — 지시문 기반 t2i (turbo/int8/raw) | 독립 |
 | `dasiwa` | Wan 2.2 I2V DaSiWa-TastySin GGUF (NSFW LoRA 세트) | Wan 2.2 MoE |
 | `smooth` | Wan 2.2 I2V SmoothMix (애니/실사 스타일 LoRA 세트) | Wan 2.2 MoE |
+| `anima` | Anima — 애니메이션 특화 독립 t2i (aesthetic/turbo/base) | 독립 |
 
 여러 개를 동시에 지정할 수 있고, 겹치는 파일은 한 번만 받는다.
 
@@ -138,6 +139,7 @@ Illustrious 계열에는 계열을 맞춘 것. 반대로 물리면 화풍이 끌
 | `ltx` | `LTX` | `distilled` (8스텝) / `dev` (학습 가능) | `distilled` |
 | `krea` | `KREA` | `turbo` (8스텝) / `int8` (스타일 레퍼런스) / `raw` (52스텝, 학습용) | `turbo` |
 | `krea` | `KREA_LORAS` | `1`이면 공식 스타일 LoRA 9종까지 함께 받음 | 미설정 |
+| `anima` | `ANIMA` | `aesthetic` (v1.1, 별도 LoRA 없이 고품질) / `turbo` (8~12스텝) / `base` (LoRA 학습용) | `aesthetic` |
 
 ```bash
 VIDEO=14b ./setup.sh video
@@ -276,7 +278,22 @@ ControlNet·업스케일러·태거는 `anime`과 동일한 파일을 공유한�
 | `vae` | `qwen_image_vae.safetensors` | 모드 공유 |
 | `loras` | `Krea2MythD4rkL1nes.safetensors` | 모드 공유, civitai |
 | `loras` | `Niji_Sweet_Spot_Krea2_v2A.safetensors` | 모드 공유, civitai |
+| `loras` | `snofs_krea_v1_1.safetensors` | 모드 공유, civitai.red |
 | `loras` | `krea2_{darkbrush,dotmatrix,kidsdrawing,neondrip,rainywindow,retroanime,softwatercolor,sunsetblur,vintagetarot}.safetensors` | `KREA_LORAS=1`일 때만, 공식 스타일 9종 |
+
+### `anima` — Anima (애니메이션 특화 t2i)
+
+`SDXL`이 아닌 독립 베이스(Cosmos-Predict2-2B 파인튜닝). 커스텀 노드 없이 코어 로더만으로 동작한다.
+
+| 폴더 | 파일 | 비고 |
+| --- | --- | --- |
+| `diffusion_models` | `anima-aesthetic-v1.1.safetensors` | `ANIMA=aesthetic` (기본) |
+| `diffusion_models` | `anima-base-v1.0.safetensors` | `ANIMA=turbo` / `ANIMA=base` 공용 베이스 |
+| `loras` | `anima-turbo-lora-v0.2.safetensors` | `ANIMA=turbo` |
+| `text_encoders` | `qwen_3_06b_base.safetensors` | 모드 공유 |
+| `vae` | `qwen_image_vae.safetensors` | 모드 공유. `krea`/`qwen`과 파일명이 같아 중복 다운로드 없음 |
+
+라이선스: CircleStone Labs Non-Commercial License — 모델·LoRA 본체는 비상업 전용, 생성된 이미지 자체는 상업 이용 가능(모델 카드 명시).
 
 ### `dasiwa` — Wan 2.2 I2V DaSiWa-TastySin
 
@@ -329,6 +346,7 @@ ControlNet·업스케일러·태거는 `anime`과 동일한 파일을 공유한�
 | `./setup.sh video` (14b) | ~32GB |
 | `./setup.sh ltx` | ~40GB |
 | `./setup.sh krea` (turbo) | ~19GB |
+| `./setup.sh anima` (aesthetic/turbo/base) | ~5.6GB |
 | `./setup.sh anime qwen` (fp8) | ~52GB |
 | **`./setup.sh anime qwen video`** | **~70GB** ← 권장 |
 | `VIDEO=14b ./setup.sh anime qwen video` | ~78GB (qwen 자동 gguf) |
@@ -383,6 +401,7 @@ CIVITAI_TOKEN=xxxx ./setup.sh nsfw
 | `LTX` | `distilled` | `distilled` / `dev` |
 | `KREA` | `turbo` | `turbo` / `int8` / `raw` |
 | `KREA_LORAS` | 미설정 | `1`이면 공식 스타일 LoRA 9종 추가 |
+| `ANIMA` | `aesthetic` | `aesthetic` / `turbo` / `base` |
 | `CIVITAI_TOKEN` | `/workspace/.civitai_token` | civitai 인증 |
 | `HF_TOKEN` | `/workspace/.hf_token` | HF 게이트 저장소 인증 |
 | `DL_RETRIES` | `5` | 파일당 재시도 횟수 |
