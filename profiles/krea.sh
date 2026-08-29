@@ -54,6 +54,7 @@ esac
 # 모드와 무관하게 공유. turbo <-> raw 를 오가도 다시 받지 않는다.
 FILES+=(  
   "$BASE/text_encoders|qwen3vl_4b_fp8_scaled.safetensors|$KREA_REPO/text_encoders/qwen3vl_4b_fp8_scaled.safetensors"  
+  "$BASE/text_encoders|qwen3vl_4b-instruct-abliterated_fp8_scaled.safetensors|https://huggingface.co/ahmed22xa/Huihui-Qwen3-VL-4B-Instruct-abliterated-comfy/resolve/main/Huihui-Qwen3-VL-4B-Instruct-abliterated-fp8_scaled.safetensors"  
   "$BASE/vae|qwen_image_vae.safetensors|$KREA_REPO/vae/qwen_image_vae.safetensors"
   "$BASE/loras|Krea2MythD4rkL1nes.safetensors|https://civitai.com/api/download/models/3165227?fileId=3045636"
   "$BASE/loras|Niji_Sweet_Spot_Krea2_v2A.safetensors|https://civitai.com/api/download/models/3210573?fileId=3092284"
