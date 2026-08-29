@@ -13,4 +13,5 @@ FILES+=(
   "$BASE/loras|IFL_v1.0_IL.safetensors|https://civitai.red/api/download/models/2211883?fileId=2104890"
   "$BASE/loras|Deep_Kiss_V3_ToTo-000007.safetensors|https://civitai.red/api/download/models/2314955?fileId=2208182"
   "$BASE/loras|fern-s1-illustriousxl-lora-nochekaiser.safetensors|https://civitai.red/api/download/models/1626406?fileId=1527192"
+  "$BASE/loras|mating-press-from-side-v5-illustriousxl-lora-nochekaiser.safetensors|https://civitai.red/api/download/models/2739911?fileId=2626221"
 )
