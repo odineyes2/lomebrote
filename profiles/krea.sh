@@ -57,6 +57,10 @@ FILES+=(
   "$BASE/vae|qwen_image_vae.safetensors|$KREA_REPO/vae/qwen_image_vae.safetensors"
   "$BASE/loras|Krea2MythD4rkL1nes.safetensors|https://civitai.com/api/download/models/3165227?fileId=3045636"
   "$BASE/loras|Niji_Sweet_Spot_Krea2_v2A.safetensors|https://civitai.com/api/download/models/3210573?fileId=3092284"
+  "$BASE/loras|Mrpopo_anime_full_potential.safetensors|https://civitai.red/api/download/models/3168308?fileId=3048739"  
+  "$BASE/loras|Iyo-Sumiv_10.safetensors|https://civitai.com/api/download/models/3226267?fileId=3118472"  
+  "$BASE/loras|krea2filterbypass.safetensors|https://huggingface.co/Kutches/Kr3a/resolve/c28120b6ebfff2629d475dcde0bbdbf45cbc06e9/krea2filterbypass.safetensors"  
+  # NSFW
   "$BASE/loras|snofs_krea_v1_1.safetensors|https://civitai.red/api/download/models/3104629?fileId=2984442"  
 )
 
