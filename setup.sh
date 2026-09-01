@@ -16,8 +16,16 @@ set -e
 #   ./setup.sh smooth
 #   ./setup.sh dasiwa
 #
+# ── 보충 실습(레이어합성·ESRGAN·립싱크·LTXV, SVD/AnimateDiff 대체) ──
+#   ./setup.sh layerstyle      레이어 합성 (모델 다운로드 없음, 노드만)
+#   ./setup.sh esrgan          ESRGAN 업스케일러 (커스텀 노드 불필요)
+#   ./setup.sh latentsync      립싱크 — LatentSync (SVD 기반 Sonic 대체)
+#   ./setup.sh ltxv            LTXV 경량판 (0.9.8 distilled-fp8, ltx 프로필과 별도 — HF 토큰 불필요)
+#   ./setup.sh anime layerstyle esrgan latentsync ltxv   보충 실습 한번에 부트스트랩
+#
 # 볼륨 100GB 기준 조합별 누계는 각 프로필 파일 상단 주석에 있다.
 # 권장: anime + qwen(fp8) + video(5b) = 70GB.
+# 보충 실습 4종 추가 누계: layerstyle(+0) + esrgan(+0.13GB) + latentsync(+3.5GB) + ltxv(+9.6GB) ≈ +13GB.
 #
 # 20GB 급 파일이 섞이면 tmux 안에서 돌릴 것.
 #   tmux new -s dl  →  ./setup.sh anime video  →  Ctrl+b, d
