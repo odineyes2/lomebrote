@@ -54,11 +54,22 @@ if [ -z "$HF_TOKEN" ] && [ -r /workspace/.hf_token ]; then
   HF_TOKEN="$(tr -d ' \t\r\n' < /workspace/.hf_token)"
 fi
 
+# 알려진 venv 후보를 순서대로 찾는다 — 셀의 PATH/venv 활성화 여부에 기대지 않는다.
+# 이게 command -v python3 로 뽑았을 때의 함정: venv를 활성화한 채로 실행하면 venv의
+# python3에 설치되지만, 활성화 안 한 채로 실행하면 시스템 python3에 설치돼서 커스텀
+# 노드가 실제로 돌아가는 venv 밖에 남는다. ComfyUI는 조용히 import 실패하고 노드가
+# 통째로 등록에서 빠지는데, 백그라운드 프로세스라 에러가 화면에 안 보여서 원인을
+# 찾기 어렵다. .venv-cu128는 일부 파드 이미지에서 쓰는 이름이라 후보에 포함해둔다.
 PY=""
-for c in /workspace/runpod-slim/venv/bin/python /workspace/venv/bin/python $COMFY/venv/bin/python; do
+for c in "$COMFY/.venv-cu128/bin/python" /workspace/runpod-slim/venv/bin/python /workspace/venv/bin/python "$COMFY/venv/bin/python"; do
   [ -x "$c" ] && PY="$c" && break
 done
-[ -z "$PY" ] && PY="$(command -v python3)"
+if [ -z "$PY" ]; then
+  PY="$(command -v python3)"
+  echo "  ! 경고: 알려진 venv 경로에서 python을 찾지 못해 시스템 python3($PY)로 커스텀 노드"
+  echo "    requirements를 설치합니다. ComfyUI가 다른 venv 안에서 뜬다면 노드가 조용히"
+  echo "    로드 실패할 수 있습니다 — 이 경고가 보이면 venv 경로를 확인하세요."
+fi
 
 if [ $# -eq 0 ]; then
   echo "사용법: ./setup.sh <프로필...>"
