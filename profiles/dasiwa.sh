@@ -5,8 +5,8 @@
 #
 # MoE. high 가 구도·큰 모션, low 가 디테일을 맡는다. 하나만 받으면 워크플로가 안 돈다.
 FILES+=(
-    "$BASE/diffusion_models|Wan2_2-I2V-High-DaSiWa-TastySin-q8.gguf.safetensors|https://civitai.red/api/download/models/2466604?fileId=2355406"
-    "$BASE/diffusion_models|Wan2_2-I2V-Low-DaSiWa-TastySin-q8.gguf.safetensors|https://civitai.red/api/download/models/2466822?fileId=2355529"
+    "$BASE/diffusion_models|DasiwaWAN22I2V14BLightspeed_snatchkissHighV11_pruned_fp8|https://civitai.red/api/download/models/2953474?fileId=2837908"
+    "$BASE/diffusion_models|DasiwaWAN22I2V14BLightspeed_snatchkissLowV11_pruned_fp8|https://civitai.red/api/download/models/2953485?fileId=2837910"
     "$BASE/vae|wan_2.1_vae.safetensors|https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors"
 # WAN General NSFW model
     "$BASE/loras|NSFW-22-H-e8.safetensors|https://civitai.red/api/download/models/2073605?fileId=1969798"
@@ -26,4 +26,5 @@ FILES+=(
 # 실사 영상에서 포즈를 뽑는 절차(본문 5번)에 Load Video 가 필요하다.
 NODE_REPOS+=(
   "ComfyUI-VideoHelperSuite|https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git|no"
+  "ComfyUI-GGUF|https://github.com/city96/ComfyUI-GGUF.git|no"
 )

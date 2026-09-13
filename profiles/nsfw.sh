@@ -30,7 +30,15 @@ FILES+=(
   "$BASE/loras|xmc_v0.3_noobai_cwhj.safetensors|https://civitai.red/api/download/models/1041204?fileId=946906"
    
   # Character LoRA
+  "$BASE/loras|SwordMaiden-IL-v2-08.safetensors|https://civitai.red/api/download/models/1759607?fileId=1660331"
+  "$BASE/loras|Cow_Girl.safetensors|https://civitai.red/api/download/models/2294136?fileId=2185137"
+  "$BASE/loras|Priestess.safetensors|https://civitai.red/api/download/models/2294142?fileId=2185148"
+  "$BASE/loras|goblin_slayer.safetensors|https://civitai.red/api/download/models/1348156?fileId=1304455"
   "$BASE/loras|fern-s1-illustriousxl-lora-nochekaiser.safetensors|https://civitai.red/api/download/models/1626406?fileId=1527192"
+
+
+
+
 
    # NSFW Body Position
   "$BASE/loras|Deep_Kiss_V3_ToTo-000007.safetensors|https://civitai.red/api/download/models/2314955?fileId=2208182"
