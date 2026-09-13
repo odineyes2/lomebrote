@@ -5,8 +5,8 @@
 #
 # MoE. high 가 구도·큰 모션, low 가 디테일을 맡는다. 하나만 받으면 워크플로가 안 돈다.
 FILES+=(
-    "$BASE/diffusion_models|DasiwaWAN22I2V14BLightspeed_snatchkissHighV11_pruned_fp8|https://civitai.red/api/download/models/2953474?fileId=2837908"
-    "$BASE/diffusion_models|DasiwaWAN22I2V14BLightspeed_snatchkissLowV11_pruned_fp8|https://civitai.red/api/download/models/2953485?fileId=2837910"
+    "$BASE/unet|DasiwaWAN22I2V14BLightspeed_snatchkissHighV11_pruned_fp8.safetensors|https://civitai.red/api/download/models/2953474?fileId=2837908"
+    "$BASE/unet|DasiwaWAN22I2V14BLightspeed_snatchkissLowV11_pruned_fp8.safetensors|https://civitai.red/api/download/models/2953485?fileId=2837910"
     "$BASE/vae|wan_2.1_vae.safetensors|https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors"
 # WAN General NSFW model
     "$BASE/loras|NSFW-22-H-e8.safetensors|https://civitai.red/api/download/models/2073605?fileId=1969798"
