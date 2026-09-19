@@ -1,5 +1,5 @@
 # MiniMax H3 (Hailuo 3.0) — 옴니모달 T2V / I2V / R2V, 네이티브 스테레오 오디오.
-#   ./setup.sh minimax_h3
+#   ./setup.sh mmh3            LoRA 만 받으려면: ./setup.sh --loras mmh3
 #
 # ComfyUI 코어 0.30.0+ 에 MiniMaxH3ImageToVideo / MiniMaxH3ReferenceToVideo 노드가
 # 내장돼 있다(PR #15224). qwen/video 처럼 SDXL이 아니고 단독 실행 가능 — 커스텀 노드

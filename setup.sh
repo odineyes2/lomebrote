@@ -11,8 +11,16 @@ set -e
 #   ./setup.sh smooth
 #   ./setup.sh dasiwa
 #   ./setup.sh latentsync      립싱크 — LatentSync (SVD 기반 Sonic 대체)
+#   ./setup.sh mmh3            MiniMax H3 (모델은 템플릿으로 받고 프로필은 LoRA 위주)
 #   ./setup.sh tools           공용 도구(FaceDetailer·전처리기·태거·USDU). wai 는 자동 포함,
 #                              다른 프로필에서 쓰려면 직접 지정: ./setup.sh krea tools
+#
+# 옵션 (프로필 이름 앞뒤 아무 곳에나 둘 수 있다):
+#   --loras, --l               각 프로필의 LoRA($BASE/loras 아래)만 받는다. 체크포인트·모델·VAE 등은
+#                              받지 않고, 커스텀 노드 설치·설정도 건너뛴다.
+#                              ./setup.sh --loras wai        wai 의 LoRA 만
+#                              ./setup.sh --l mmh3           mmh3 의 LoRA 만
+#                              프로필의 모드 변수는 그대로 적용된다 (예: VIDEO=14b ./setup.sh --l video).
 #
 # 볼륨 100GB 기준 조합별 누계는 각 프로필 파일 상단 주석에 있다.
 #
@@ -61,8 +69,19 @@ if [ -z "$PY" ]; then
   echo "    로드 실패할 수 있습니다 — 이 경고가 보이면 venv 경로를 확인하세요."
 fi
 
+LORAS_ONLY=""
+_args=()
+for _opt in "$@"; do
+  case "$_opt" in
+    --loras|--l) LORAS_ONLY=1 ;;
+    -*) echo "알 수 없는 옵션: $_opt (사용 가능: --loras, --l)"; exit 1 ;;
+    *)  _args+=("$_opt") ;;
+  esac
+done
+set -- "${_args[@]}"
+
 if [ $# -eq 0 ]; then
-  echo "사용법: ./setup.sh <프로필...>"
+  echo "사용법: ./setup.sh [--loras|--l] <프로필...>"
   for f in "$SELF"/profiles/*.sh; do
     [ -f "$f" ] && echo "  $(basename "${f%.sh}")"
   done
@@ -105,9 +124,23 @@ for p in "${PROFILES[@]}"; do
   load_profile "$p"
 done
 
+# --loras: 받을 목록에서 LoRA 폴더($BASE/loras, $BASE/loras/<하위>)만 남긴다.
+# 노드 설치·설정도 건너뛰도록 NODE_REPOS / POST_NODES 를 비운다([3/5], [4/5] 참고).
+if [ -n "$LORAS_ONLY" ]; then
+  _lora_files=()
+  for e in "${FILES[@]}"; do
+    case "$e" in
+      "$BASE/loras|"*|"$BASE/loras/"*) _lora_files+=("$e") ;;
+    esac
+  done
+  FILES=("${_lora_files[@]}")
+  NODE_REPOS=()
+  POST_NODES=()
+fi
+
 # ──────────────────────────────────────────────────
 
-echo "프로필: $* / python: $PY / 디스크: $(df -h /workspace | awk 'NR==2 {print $4}')"
+echo "프로필: $*${LORAS_ONLY:+ (LoRA만)} / python: $PY / 디스크: $(df -h /workspace | awk 'NR==2 {print $4}')"
 
 # ComfyUI 버전. 예전엔 이미지에 뭐가 들었든 그냥 썼는데, 영상 모델은 코어 버전을
 # 탄다(Wan2.2 템플릿 = 0.3.46 이상, Anima = 0.11.1 이상). 안 맞으면 노드가 아예 없다.
@@ -164,7 +197,7 @@ mkdir -p $COMFY/user/default/workflows
 # cp -n $REPO/workflows/*.json $COMFY/user/default/workflows/ 2>/dev/null || true
 cp -rn $REPO/workflows/. $COMFY/user/default/workflows/ 2>/dev/null || true
 
-echo "[3/5] 커스텀 노드"
+echo "[3/5] 커스텀 노드${LORAS_ONLY:+ — 건너뜀 (--loras)}"
 mkdir -p $NODES && cd $NODES
 for e in "${NODE_REPOS[@]}"; do
   IFS='|' read -r dir url rec <<< "$e"
@@ -195,11 +228,14 @@ install_reqs() {
   done
 }
 
-for req in $NODES/*/requirements.txt; do
-  [ -f "$req" ] && install_reqs "$req"
-done
+# --loras 에서는 이미 깔린 노드의 requirements 도 다시 설치하지 않는다.
+if [ -z "$LORAS_ONLY" ]; then
+  for req in $NODES/*/requirements.txt; do
+    [ -f "$req" ] && install_reqs "$req"
+  done
+fi
 
-echo "[4/5] 노드 설정"
+echo "[4/5] 노드 설정${LORAS_ONLY:+ — 건너뜀 (--loras)}"
 # 노드별 설정은 각 프로필이 POST_NODES 로 등록한 함수가 한다(노드 clone·requirements 설치 이후).
 for fn in "${POST_NODES[@]}"; do
   "$fn"
@@ -307,6 +343,9 @@ echo "[5/5] 파일 다운로드"
 # 예전엔 첫 실패에서 exit 1 했는데, 20GB 짜리를 여럿 받는 중에 civitai 하나가
 # 넘어지면 뒤의 정상 파일까지 통째로 못 받았다. 실패는 모아서 끝에 보고한다.
 FAILED=()
+if [ ${#FILES[@]} -eq 0 ]; then
+  echo "  받을 파일이 없습니다.${LORAS_ONLY:+ (이 프로필/모드에는 LoRA 가 없습니다 — VIDEO=14b 같은 모드 변수를 확인하세요)}"
+fi
 for e in "${FILES[@]}"; do
   IFS='|' read -r dir name url <<< "$e"
   dest="$dir/$name"

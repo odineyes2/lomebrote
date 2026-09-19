@@ -111,6 +111,7 @@ apt-get update -qq && apt-get install -y -qq tmux
 | `smooth` | Wan 2.2 I2V SmoothMix (애니/실사 스타일 LoRA 세트) | Wan 2.2 MoE |
 | `anima` | Anima — 애니메이션 특화 독립 t2i (aesthetic/turbo/base) | 독립 |
 | `latentsync` | LatentSync 립싱크 (노드 폴더 안에 체크포인트 설치) | 독립 |
+| `mmh3` | MiniMax H3 (Hailuo 3.0) — 모델은 ComfyUI 템플릿으로 받고, 프로필은 LoRA 2종 위주 | 독립 |
 
 여러 개를 동시에 지정할 수 있고, 겹치는 파일은 한 번만 받는다.
 
@@ -125,6 +126,29 @@ apt-get update -qq && apt-get install -y -qq tmux
 
 **ControlNet은 체크포인트 계열에 맞춰야 한다.** Illustrious 계열에는 계열을 맞춘 것을 쓴다.
 범용 SDXL ControlNet을 물리면 화풍이 끌려가고 색이 탁해진다.
+
+### 옵션 — `--loras` (`--l`)
+
+각 프로필의 **LoRA만** 받는다. LoRA는 프로필에서 `$BASE/loras` 또는 `$BASE/loras/<하위폴더>`로
+선언된 항목이다. 옵션은 프로필 이름 앞뒤 어디에 둬도 된다.
+
+```bash
+./setup.sh --loras wai            # wai 의 LoRA 만
+./setup.sh --l mmh3               # 별칭. mmh3 의 LoRA 만
+./setup.sh --loras wai krea       # 여러 프로필의 LoRA 만 한 번에
+VIDEO=14b ./setup.sh --l video    # 모드 변수는 그대로 적용된다
+```
+
+- 체크포인트·diffusion 모델·VAE·텍스트 인코더·ControlNet 등은 받지 않는다.
+- 커스텀 노드 clone, requirements 설치, 노드 설정([3/5], [4/5])도 건너뛴다.
+- 폴더 생성, `extra_model_paths.yaml` 복사, output 링크([2/5])와 이미 있는 파일 건너뛰기·이어받기·토큰 처리는 그대로다.
+- 템플릿(ComfyUI 내장 다운로드)으로 모델을 받고 LoRA만 스크립트로 관리할 때 쓴다.
+  템플릿은 `ComfyUI/models/`에 받는데 스크립트는 `shared_models/`만 보기 때문에, 모델 줄을 켜 둔 프로필을
+  옵션 없이 돌리면 같은 모델을 다시 받는다.
+- 프로필 모드에 LoRA가 없으면 아무것도 받지 않고 그렇게 알려 준다.
+  예: `wai video`처럼 함께 지정하면 `video`가 5b로 내려가는데 5b에는 LoRA가 없다.
+  `krea`의 공식 스타일 LoRA 9종은 `KREA_LORAS=1`일 때만 목록에 들어간다.
+- `civitai.red` LoRA는 이 모드에서도 `CIVITAI_TOKEN`이 필요하다.
 
 ### 모드가 있는 프로필
 
@@ -236,6 +260,20 @@ KREA=raw ./setup.sh krea
 
 라이선스: CircleStone Labs Non-Commercial License — 모델·LoRA 본체는 비상업 전용, 생성된 이미지 자체는 상업 이용 가능(모델 카드 명시).
 
+### `mmh3` — MiniMax H3 (Hailuo 3.0)
+
+T2V / I2V / R2V. ComfyUI 코어 0.30.0+ 에 노드가 내장돼 있어 커스텀 노드가 필요 없다.
+모델(diffusion 2종, 텍스트 인코더, VAE 2종, 약 61GB)은 ComfyUI 템플릿으로 받는 것을 전제로
+`profiles/mmh3.sh`에서 **주석 처리**돼 있다. 활성 항목은 LoRA뿐이다.
+
+| 폴더 | 파일 | 비고 |
+| --- | --- | --- |
+| `loras/MMH3` | `MysticXXX_MMH3-V4.safetensors` | civitai.red, `CIVITAI_TOKEN` 필요 |
+| `loras/MMH3` | `H3_Motion_BoosterV2.safetensors` | civitai.red, `CIVITAI_TOKEN` 필요 |
+
+LoRA만 받으려면 `./setup.sh --l mmh3`. 모델 줄의 주석을 풀면 옵션 없이 실행할 때 `shared_models/` 기준으로
+파일을 찾으므로, 템플릿이 `ComfyUI/models/`에 받은 모델은 없는 것으로 보고 다시 받는다.
+
 ### `dasiwa` — Wan 2.2 I2V DaSiWa-TastySin
 
 | 폴더 | 파일 | 비고 |
@@ -314,7 +352,7 @@ CIVITAI_TOKEN=xxxx ./setup.sh wai
 
 | 토큰 | 필요한 프로필 | 비고 |
 | --- | --- | --- |
-| `CIVITAI_TOKEN` | `wai`, `dasiwa`, `smooth`, `krea`(LoRA) | civitai API 다운로드에 필요. 쿼리 파라미터로 붙는다 (헤더는 CDN 리다이렉트에서 잘림) |
+| `CIVITAI_TOKEN` | `wai`, `dasiwa`, `smooth`, `krea`(LoRA), `mmh3`(LoRA) | civitai API 다운로드에 필요. 쿼리 파라미터로 붙는다 (헤더는 CDN 리다이렉트에서 잘림) |
 | `HF_TOKEN` | 현재 필수인 프로필 없음 | 게이트 저장소를 받는 프로필을 추가할 때(`NEED_HF_TOKEN=1`). **웹에서 약관 동의를 먼저** 해야 한다 |
 
 **civitai 403 이슈**: `civitai.com` 직링크는 `b2.civitai.com`으로 리다이렉트되면 403이
@@ -353,6 +391,7 @@ lomebrote/
 │   ├── smooth.sh               Wan 2.2 SmoothMix
 │   ├── krea.sh                 Krea 2
 │   ├── anima.sh                Anima
+│   ├── mmh3.sh                 MiniMax H3
 │   └── latentsync.sh           립싱크
 └── workflows/
     └── *.json                  ComfyUI 워크플로우
