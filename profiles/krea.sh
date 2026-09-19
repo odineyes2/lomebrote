@@ -56,13 +56,16 @@ FILES+=(
   "$BASE/text_encoders|qwen3vl_4b_fp8_scaled.safetensors|$KREA_REPO/text_encoders/qwen3vl_4b_fp8_scaled.safetensors"  
   "$BASE/text_encoders|qwen3vl_4b-instruct-abliterated_fp8_scaled.safetensors|https://huggingface.co/ahmed22xa/Huihui-Qwen3-VL-4B-Instruct-abliterated-comfy/resolve/main/Huihui-Qwen3-VL-4B-Instruct-abliterated-fp8_scaled.safetensors"  
   "$BASE/vae|qwen_image_vae.safetensors|$KREA_REPO/vae/qwen_image_vae.safetensors"
-  "$BASE/loras|Krea2MythD4rkL1nes.safetensors|https://civitai.com/api/download/models/3165227?fileId=3045636"
-  "$BASE/loras|Niji_Sweet_Spot_Krea2_v2A.safetensors|https://civitai.com/api/download/models/3210573?fileId=3092284"
-  "$BASE/loras|Mrpopo_anime_full_potential.safetensors|https://civitai.red/api/download/models/3168308?fileId=3048739"  
-  "$BASE/loras|Iyo-Sumiv_10.safetensors|https://civitai.com/api/download/models/3226267?fileId=3118472"  
-  "$BASE/loras|krea2filterbypass.safetensors|https://huggingface.co/Kutches/Kr3a/resolve/c28120b6ebfff2629d475dcde0bbdbf45cbc06e9/krea2filterbypass.safetensors"  
-  # NSFW
-  "$BASE/loras|snofs_krea_v1_1.safetensors|https://civitai.red/api/download/models/3104629?fileId=2984442"  
+  
+  # General lora
+  "$BASE/loras/krea|Krea2MythD4rkL1nes.safetensors|https://civitai.com/api/download/models/3165227?fileId=3045636"
+  "$BASE/loras/krea|Niji_Sweet_Spot_Krea2_v2A.safetensors|https://civitai.com/api/download/models/3210573?fileId=3092284"
+  "$BASE/loras/krea|Mrpopo_anime_full_potential.safetensors|https://civitai.red/api/download/models/3168308?fileId=3048739"  
+  "$BASE/loras/krea|Iyo-Sumiv_10.safetensors|https://civitai.com/api/download/models/3226267?fileId=3118472"  
+  "$BASE/loras/krea|krea2filterbypass.safetensors|https://huggingface.co/Kutches/Kr3a/resolve/c28120b6ebfff2629d475dcde0bbdbf45cbc06e9/krea2filterbypass.safetensors"  
+  
+  # NSFW lora
+  "$BASE/loras/krea|snofs_krea_v1_1.safetensors|https://civitai.red/api/download/models/3104629?fileId=2984442"  
 )
 
 # 공식 스타일 LoRA 9종. 각각 트리거 워드를 프롬프트 맨 앞에 넣어야 걸린다(강도 1.0 기준).
@@ -78,7 +81,7 @@ FILES+=(
 if [ -n "${KREA_LORAS:-}" ]; then
   for _l in darkbrush dotmatrix kidsdrawing neondrip rainywindow \
             retroanime softwatercolor sunsetblur vintagetarot; do
-    FILES+=("$BASE/loras|krea2_${_l}.safetensors|$KREA_REPO/loras/krea2_${_l}.safetensors")
+    FILES+=("$BASE/loras/krea|krea2_${_l}.safetensors|$KREA_REPO/loras/krea2_${_l}.safetensors")
   done
 fi
 
