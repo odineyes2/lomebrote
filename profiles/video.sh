@@ -45,12 +45,13 @@ else
     "$BASE/diffusion_models|wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors|https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors"
     "$BASE/diffusion_models|wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors|https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors"
     "$BASE/vae|wan_2.1_vae.safetensors|https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors"
-    # 4-step 증류 LoRA. 20+ 스텝을 4 로 줄인다. 실습 반복에는 이게 있어야 견딘다.
-    # high/low 각각에 짝을 맞춰 물릴 것. 섞으면 모션이 뭉갠다.
-    "$BASE/loras|wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors|https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors"
-    "$BASE/loras|wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors|https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors"
-     "$BASE/loras|wan2.2_i2v_anime_style_v2_low_noise.safetensors|https://civitai.com/api/download/models/2516839?fileId=2404581"
-    "$BASE/loras|wan2.2_i2v_anime_style_v2_high_noise.safetensors|https://civitai.com/api/download/models/2516837?fileId=2404577"
+    
+    # 4-step 증류 LoRA. 20+ 스텝을 4 로 줄인다. 실습 반복에는 이게 있어야 견딘다.    
+    "$BASE/loras/wan|wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors|https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors"
+    "$BASE/loras/wan|wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors|https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors"
+    
+    "$BASE/loras/wan|wan2.2_i2v_anime_style_v2_low_noise.safetensors|https://civitai.com/api/download/models/2516839?fileId=2404581"
+    "$BASE/loras/wan|wan2.2_i2v_anime_style_v2_high_noise.safetensors|https://civitai.com/api/download/models/2516837?fileId=2404577"
   )
 fi
 
