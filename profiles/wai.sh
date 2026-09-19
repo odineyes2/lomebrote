@@ -1,8 +1,24 @@
-# WAI-illustrious. ControlNet·업스케일러·태거는 anime 과 동일.
+# WAI-illustrious (SDXL / Illustrious 계열).
+#
+# 공용 도구(FaceDetailer·전처리기·태거·USDU 등)는 tools 프로필에서 함께 로드한다.
+# 여기에는 SDXL 체크포인트에만 묶이는 노드·가중치(IPAdapter, XY Plot)를 둔다.
 
-SDXL=1
+load_profile tools
+
+NODE_REPOS+=(
+  # 원저작자(LucianoCirino) 저장소는 관리 중단. jags111 포크가 유지판이다.
+  "efficiency-nodes-comfyui|https://github.com/jags111/efficiency-nodes-comfyui.git|no"
+  "ComfyUI_IPAdapter_plus|https://github.com/cubiq/ComfyUI_IPAdapter_plus.git|no"
+)
 
 FILES+=(
+  # IPAdapter 가중치(약 4GB).
+  # 파일명 규칙: 앞의 sdxl = 체크포인트 계열, 뒤의 vit-h = clip_vision 인코더(bigG 아님).
+  # 원본이 model.safetensors 라 리네임 필수. Unified Loader 는 아래 이름과 글자 하나까지 같아야 인식한다.
+  "$BASE/clip_vision|CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors|https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors"
+  "$BASE/ipadapter|ip-adapter_sdxl_vit-h.safetensors|https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl_vit-h.safetensors"
+  "$BASE/ipadapter|ip-adapter-plus_sdxl_vit-h.safetensors|https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors"
+
   # Checkpoint
   "$BASE/checkpoints|WAI-illustrious-SDXL.safetensors|https://civitai.red/api/download/models/2883731?fileId=2763986"
   
@@ -14,8 +30,6 @@ FILES+=(
   "$BASE/controlnet|Illustrious_openpose.safetensors|https://huggingface.co/windsingai/openpose/resolve/main/openpose_s6000.safetensors"
   "$BASE/controlnet|NoobAI_depth_midas.safetensors|https://huggingface.co/Eugeoter/noob-sdxl-controlnet-depth_midas-v1-1/resolve/main/diffusion_pytorch_model.fp16.safetensors"
   "$BASE/controlnet|Illustrious_lineart_anime.safetensors|https://huggingface.co/Eugeoter/noob-sdxl-controlnet-lineart_anime/resolve/main/diffusion_pytorch_model.fp16.safetensors"
-  "$BASE/wd14_tagger|wd-swinv2-tagger-v3.onnx|https://huggingface.co/SmilingWolf/wd-swinv2-tagger-v3/resolve/main/model.onnx"
-  "$BASE/wd14_tagger|wd-swinv2-tagger-v3.csv|https://huggingface.co/SmilingWolf/wd-swinv2-tagger-v3/resolve/main/selected_tags.csv"
 
   # General LoRA
   "$BASE/loras|IFL_v1.0_IL.safetensors|https://civitai.red/api/download/models/2211883?fileId=2104890"

@@ -3,37 +3,27 @@ set -e
 
 # RunPod ComfyUI (runpod-slim).
 #
-#   ./setup.sh real            실사 (RealVisXL)
-#   ./setup.sh anime           애니 (Illustrious 공식 베이스)
-#   ./setup.sh nsfw            애니 (WAI)
-#   ./setup.sh retro           레트로/반실사 (Retrordinary)
-#   ./setup.sh qwen            Qwen-Image-Edit 2511 (SDXL 아님, 단독 실행 가능)
+#   ./setup.sh wai             애니 (WAI-illustrious, SDXL). 공용 도구(tools)를 함께 설치.
 #   ./setup.sh video           Wan 2.2 i2v (SDXL 아님, 단독 실행 가능)
-#   ./setup.sh ltx             LTX-2.5 (실험적, HF 토큰 필요)
-#   ./setup.sh anime qwen      부트스트랩. qwen 은 자동으로 GGUF.
-#   ./setup.sh anime video     부트스트랩. video 는 자동으로 5B.
+#   ./setup.sh wai video       부트스트랩. video 는 자동으로 5B.
 #   ./setup.sh krea            Krea 2 Turbo t2i (SDXL 아님, 단독 실행 가능)
+#   ./setup.sh anima           Anima t2i (SDXL 아님, 단독 실행 가능)
 #   ./setup.sh smooth
 #   ./setup.sh dasiwa
-#
-# ── 보충 실습(레이어합성·ESRGAN·립싱크·LTXV, SVD/AnimateDiff 대체) ──
-#   ./setup.sh layerstyle      레이어 합성 (모델 다운로드 없음, 노드만)
-#   ./setup.sh esrgan          ESRGAN 업스케일러 (커스텀 노드 불필요)
 #   ./setup.sh latentsync      립싱크 — LatentSync (SVD 기반 Sonic 대체)
-#   ./setup.sh ltxv            LTXV 경량판 (0.9.8 distilled-fp8, ltx 프로필과 별도 — HF 토큰 불필요)
-#   ./setup.sh anime layerstyle esrgan latentsync ltxv   보충 실습 한번에 부트스트랩
+#   ./setup.sh tools           공용 도구(FaceDetailer·전처리기·태거·USDU). wai 는 자동 포함,
+#                              다른 프로필에서 쓰려면 직접 지정: ./setup.sh krea tools
 #
 # 볼륨 100GB 기준 조합별 누계는 각 프로필 파일 상단 주석에 있다.
-# 권장: anime + qwen(fp8) + video(5b) = 70GB.
-# 보충 실습 4종 추가 누계: layerstyle(+0) + esrgan(+0.13GB) + latentsync(+3.5GB) + ltxv(+9.6GB) ≈ +13GB.
 #
 # 20GB 급 파일이 섞이면 tmux 안에서 돌릴 것.
-#   tmux new -s dl  →  ./setup.sh anime video  →  Ctrl+b, d
+#   tmux new -s dl  →  ./setup.sh wai video  →  Ctrl+b, d
 # 중단되어도 .part 를 남기므로 재실행하면 이어받는다.
 
 COMFY=/workspace/runpod-slim/ComfyUI
 BASE=/workspace/shared_models
-PROJ=/workspace/project_lomebrote
+PROJ=/workspace/files
+OUTPUT=/workspace/output
 NODES=$COMFY/custom_nodes
 SELF="$(cd "$(dirname "$0")" && pwd)"
 # 예전엔 /workspace/lomebrote 를 박아 뒀는데, 클론 위치를 옮기면 조용히 깨졌다.
@@ -49,7 +39,7 @@ DL_RETRIES=${DL_RETRIES:-5}
 if [ -z "$CIVITAI_TOKEN" ] && [ -r /workspace/.civitai_token ]; then
   CIVITAI_TOKEN="$(tr -d ' \t\r\n' < /workspace/.civitai_token)"
 fi
-# HF 토큰은 게이트 저장소(LTX-2.5 등)용. Comfy-Org / Wan 계열은 없어도 받아진다.
+# HF 토큰은 게이트 저장소용. Comfy-Org / Wan 계열은 없어도 받아진다.
 if [ -z "$HF_TOKEN" ] && [ -r /workspace/.hf_token ]; then
   HF_TOKEN="$(tr -d ' \t\r\n' < /workspace/.hf_token)"
 fi
@@ -80,70 +70,47 @@ if [ $# -eq 0 ]; then
 fi
 
 # ── 프로필 계약 ────────────────────────────────────
-# 프로필은 FILES / NODE_REPOS 에 항목을 덧붙인다.
-# SDXL 계열 프로필은 SDXL=1 을 선언한다 (IPAdapter 블록의 조건).
+# 프로필은 FILES / NODE_REPOS 에 항목을 덧붙인다. 공통으로 깔리는 것은 없다 —
+# 노드·가중치는 전부 필요로 하는 프로필이 직접 선언한다.
+# 노드가 clone 된 뒤에 해야 하는 설정(config 쓰기, install.py 등)은 함수로 만들어
+#   POST_NODES+=(함수명)
+# 으로 등록하면 [4/5] 에서 실행된다. 함수 안의 마지막 명령이 실패하면 set -e 로 전체가
+# 죽으므로 `[ ... ] && ...` 대신 if 를 쓸 것.
+# 다른 프로필의 구성이 필요하면 프로필 안에서 `load_profile <이름>` 을 부른다(중복 로드 방지됨).
 # HF 게이트 파일을 받는 프로필은 NEED_HF_TOKEN=1 을 선언한다.
 
-# 공통 전처리기 가중치. 폴더가 <HF 저장소명> 구조여야 노드가 찾는다.
-FILES=(
-  "$BASE/controlnet_aux/hr16/yolox-onnx|yolox_l.torchscript.pt|https://huggingface.co/hr16/yolox-onnx/resolve/main/yolox_l.torchscript.pt"
-  "$BASE/controlnet_aux/hr16/DWPose-TorchScript-BatchSize5|dw-ll_ucoco_384_bs5.torchscript.pt|https://huggingface.co/hr16/DWPose-TorchScript-BatchSize5/resolve/main/dw-ll_ucoco_384_bs5.torchscript.pt"
-  "$BASE/controlnet_aux/yzd-v/DWPose|yolox_l.onnx|https://huggingface.co/yzd-v/DWPose/resolve/main/yolox_l.onnx"
-  "$BASE/controlnet_aux/depth-anything/Depth-Anything-V2-Large|depth_anything_v2_vitl.pth|https://huggingface.co/depth-anything/Depth-Anything-V2-Large/resolve/main/depth_anything_v2_vitl.pth"
-)
-SDXL=""
+FILES=()
 NEED_HF_TOKEN=""
+POST_NODES=()
 
 # 프로필이 NODE_REPOS+= 로 덧붙이므로 반드시 source 보다 위에 있어야 한다.
-NODE_REPOS=(
-  "ComfyUI_UltimateSDUpscale|https://github.com/ssitu/ComfyUI_UltimateSDUpscale.git|yes"
-  "ComfyUI-Inpaint-CropAndStitch|https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch.git|no"
-  "ComfyUI-WD14-Tagger|https://github.com/pythongosssss/ComfyUI-WD14-Tagger.git|no"
-  "comfyui_controlnet_aux|https://github.com/Fannovel16/comfyui_controlnet_aux.git|no"
-  # 원저작자(LucianoCirino) 저장소는 관리 중단. jags111 포크가 유지판이다.
-  "efficiency-nodes-comfyui|https://github.com/jags111/efficiency-nodes-comfyui.git|no"
-  "ComfyUI_IPAdapter_plus|https://github.com/cubiq/ComfyUI_IPAdapter_plus.git|no"
-  # FaceDetailer. v8.0 부터 UltralyticsDetectorProvider 가 Subpack 으로 분리돼서 둘 다 필요하다.
-  # Subpack 의 requirements 가 ultralytics 를 끌고 온다(아래 pip 루프가 처리).
-  "ComfyUI-Impact-Pack|https://github.com/ltdrdata/ComfyUI-Impact-Pack.git|no"
-  "ComfyUI-Impact-Subpack|https://github.com/ltdrdata/ComfyUI-Impact-Subpack.git|no"
-)
+NODE_REPOS=()
 
-for p in "$@"; do
-  f="$SELF/profiles/$p.sh"
+# 프로필이 "$@" 로 함께 지정된 프로필을 볼 수 있어야 한다(예: video 의 5b 자동 선택).
+# load_profile 은 함수라 그 안에서는 "$@" 가 프로필 이름이 되므로 배열로 따로 둔다.
+PROFILES=("$@")
+LOADED_PROFILES=()
+
+load_profile() {
+  local p="$1" f="$SELF/profiles/$1.sh" l
+  for l in "${LOADED_PROFILES[@]}"; do
+    [ "$l" = "$p" ] && return 0
+  done
   [ -f "$f" ] || { echo "없는 프로필: $p"; exit 1; }
+  LOADED_PROFILES+=("$p")
   source "$f"
+}
+
+for p in "${PROFILES[@]}"; do
+  load_profile "$p"
 done
-
-# SDXL 전용 IPAdapter 가중치(약 4GB). qwen/video/ltx 단독 실행에서는 건너뛴다.
-# 파일명 규칙: 앞의 sdxl = 체크포인트 계열, 뒤의 vit-h = clip_vision 인코더(bigG 아님).
-# 원본이 model.safetensors 라 리네임 필수. Unified Loader 는 아래 이름과 글자 하나까지 같아야 인식한다.
-if [ -n "$SDXL" ]; then
-  FILES+=(
-    "$BASE/clip_vision|CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors|https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors"
-    "$BASE/ipadapter|ip-adapter_sdxl_vit-h.safetensors|https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl_vit-h.safetensors"
-    "$BASE/ipadapter|ip-adapter-plus_sdxl_vit-h.safetensors|https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors"
-  )
-
-  # FaceDetailer 감지 모델. bbox/ segm/ 하위 폴더 구조가 그대로여야 노드 드롭다운에 뜬다.
-  # 노드에서는 "bbox/face_yolov8m.pt" 처럼 폴더명이 붙은 채로 보인다.
-  # yolov8m(약 52MB) 이 기본. 얼굴이 작은 구도에서는 s 보다 회수율이 낫다.
-  FILES+=(
-    "$BASE/ultralytics/bbox|face_yolov8m.pt|https://huggingface.co/Bingsu/adetailer/resolve/main/face_yolov8m.pt"
-    "$BASE/ultralytics/bbox|hand_yolov8s.pt|https://huggingface.co/Bingsu/adetailer/resolve/main/hand_yolov8s.pt"
-    "$BASE/ultralytics/segm|person_yolov8m-seg.pt|https://huggingface.co/Bingsu/adetailer/resolve/main/person_yolov8m-seg.pt"
-    # SAM. bbox 만으로 충분한 경우가 많아 선택이지만, 머리카락에 걸리는 얼굴 경계를
-    # 정리할 때 sam_model_opt 로 물린다. vit_b 는 375MB 로 vit_h(2.4GB) 대비 가볍다.
-    "$BASE/sams|sam_vit_b_01ec64.pth|https://huggingface.co/segments-arnaud/sam_vit_b/resolve/main/sam_vit_b_01ec64.pth"
-  )
-fi
 
 # ──────────────────────────────────────────────────
 
 echo "프로필: $* / python: $PY / 디스크: $(df -h /workspace | awk 'NR==2 {print $4}')"
 
 # ComfyUI 버전. 예전엔 이미지에 뭐가 들었든 그냥 썼는데, 영상 모델은 코어 버전을
-# 탄다(LTX-2.5 = 0.32.0 이상, Wan2.2 템플릿 = 0.3.46 이상). 안 맞으면 노드가 아예 없다.
+# 탄다(Wan2.2 템플릿 = 0.3.46 이상, Anima = 0.11.1 이상). 안 맞으면 노드가 아예 없다.
 if [ -d "$COMFY/.git" ]; then
   echo "ComfyUI: $(git -C "$COMFY" describe --tags --always 2>/dev/null || echo '태그 없음') ($(git -C "$COMFY" log -1 --format=%cd --date=short 2>/dev/null))"
   echo "  ※ 영상 모델 템플릿이 안 보이면 여기서 git pull 후 파드 재기동."
@@ -171,13 +138,28 @@ echo "[2/5] 폴더 · 설정"
 # diffusion_models/text_encoders/unet 은 Qwen·Wan 계열용.
 # model_patches / latent_upscale_models 는 LTX-2.5 용. yaml 에도 같은 키가 있어야 한다.
 mkdir -p $BASE/{checkpoints,loras,vae,controlnet,upscale_models,clip_vision,ipadapter,embeddings,wd14_tagger,controlnet_aux,diffusion_models,text_encoders,unet,sams,model_patches,latent_upscale_models,audio_encoders}
-# Impact Subpack 은 ultralytics/ 아래 bbox·segm 을 각각 따로 스캔한다. 평평하게 두면 못 찾는다.
-mkdir -p $BASE/ultralytics/{bbox,segm}
-mkdir -p $PROJ/{output_keep,depthmaps}
+# 예전 이름(project_lomebrote)을 쓰던 볼륨은 폴더째 files 로 옮긴다. 이미 files 가 있으면 건드리지 않는다.
+if [ -d /workspace/project_lomebrote ] && [ ! -e "$PROJ" ]; then
+  mv /workspace/project_lomebrote "$PROJ"
+  echo "  project_lomebrote → files 로 이동"
+fi
+# 예전 output_keep 은 /workspace/output 으로 합친다(같은 이름은 덮어쓰지 않고 남긴다).
+if [ -d "$PROJ/output_keep" ]; then
+  mkdir -p "$OUTPUT"
+  mv -n "$PROJ/output_keep"/* "$OUTPUT"/ 2>/dev/null || true
+  rmdir "$PROJ/output_keep" 2>/dev/null \
+    || echo "  ! $PROJ/output_keep 에 옮기지 못한 파일이 남았습니다(이름 충돌 또는 숨김 파일). 직접 확인하세요."
+fi
+mkdir -p $PROJ/depthmaps
 mkdir -p $PROJ/dataset/{raw,keep,caption}
-# 영상 실습 산출물. mp4 는 용량이 커서 output_keep 과 섞으면 정리가 안 된다.
+# 영상 실습 입출력.
 mkdir -p $PROJ/{video_in,video_out}
 cp $REPO/extra_model_paths.yaml $COMFY/
+# 생성 이미지·영상은 ComfyUI/output 이 아니라 /workspace/output 으로 간다.
+# ComfyUI/output 자리에는 심볼릭 링크가 남아서 ComfyUI 는 원래 경로 그대로 쓴다.
+bash "$REPO/move_comfy_output.sh" "$COMFY" > /dev/null \
+  && echo "  output → $OUTPUT" \
+  || echo "  ! output 링크 설정 실패 — ./move_comfy_output.sh $COMFY 를 직접 실행해 보세요."
 mkdir -p $COMFY/user/default/workflows
 # cp -n $REPO/workflows/*.json $COMFY/user/default/workflows/ 2>/dev/null || true
 cp -rn $REPO/workflows/. $COMFY/user/default/workflows/ 2>/dev/null || true
@@ -217,40 +199,11 @@ for req in $NODES/*/requirements.txt; do
   [ -f "$req" ] && install_reqs "$req"
 done
 
-# Impact Pack 은 Manager 가 install.py 를 돌려주는 걸 전제로 만들어져 있다.
-# 손으로 clone 하면 impact-pack.ini 가 안 생겨서 노드가 통째로 로드에 실패한다.
-for ip in ComfyUI-Impact-Pack ComfyUI-Impact-Subpack; do
-  [ -f "$NODES/$ip/install.py" ] || continue
-  (cd "$NODES/$ip" && PIP_CONSTRAINT= "$PY" install.py) \
-    || echo "  ! install.py 실패: $ip (기동 후 콘솔에서 IMPORT FAILED 여부 확인)"
-done
-
 echo "[4/5] 노드 설정"
-# 전처리기 가중치를 노드 폴더 밖으로 뺀다(재클론 시 유실 방지).
-# EP_list 가 CPU 인 이유: onnxruntime-gpu 는 CUDA 12+ 에서 설치가 번거롭다.
-# 노드에서 .torchscript.pt 계열을 고르면 torch 가 GPU 를 쓴다.
-cat > $NODES/comfyui_controlnet_aux/config.yaml << YAMLEOF
-annotator_ckpts_path: "$BASE/controlnet_aux"
-custom_temp_path:
-USE_SYMLINKS: False
-EP_list: ["CPUExecutionProvider"]
-YAMLEOF
-
-# pysssss.json 은 저장소 안에 있어 파드마다 초기화된다. settings 만 덮어쓴다.
-# eva02-large 는 swinv2 보다 느리지만 의상·소품 태그 회수율이 높다.
-# 캐릭터 LoRA 는 의상 태그를 빠짐없이 달아 얼굴과 분리하는 게 핵심이라 여기서 정확도가 곧 결과다.
-CFG=$NODES/ComfyUI-WD14-Tagger/pysssss.json
-[ -f "$CFG" ] && "$PY" - "$CFG" << 'PYEOF'
-import json, sys
-p = sys.argv[1]
-c = json.load(open(p))
-c.setdefault("settings", {}).update({
-    "model": "wd-eva02-large-tagger-v3", "threshold": 0.35,
-    "character_threshold": 0.85, "replace_underscore": True,
-    "exclude_tags": "watermark, signature, artist name, web address, username",
-})
-json.dump(c, open(p, "w"), indent=2, ensure_ascii=False)
-PYEOF
+# 노드별 설정은 각 프로필이 POST_NODES 로 등록한 함수가 한다(노드 clone·requirements 설치 이후).
+for fn in "${POST_NODES[@]}"; do
+  "$fn"
+done
 
 # ── 다운로드 ──────────────────────────────────────
 # 원칙: 실패해도 .part 를 지우지 않는다. 지우는 경우는 다 받았는데 크기가 비정상일 때뿐.
@@ -348,7 +301,6 @@ fi
 if [ -n "$NEED_HF_TOKEN" ] && [ -z "$HF_TOKEN" ]; then
   echo "  ⚠ 게이트된 HF 저장소를 받는 프로필인데 토큰이 없습니다. 반드시 401 이 납니다."
   echo "    1) 해당 모델 페이지에서 약관 동의  2) HF_TOKEN=<키> 또는 /workspace/.hf_token"
-  echo "    LTX-2.5: https://huggingface.co/Lightricks/LTX-2.5"
 fi
 
 echo "[5/5] 파일 다운로드"

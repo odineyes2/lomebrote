@@ -19,7 +19,7 @@
 # ⚠ 세 파일이 다 있어야 한다(모드 공통 diffusion 모델 제외). 하나라도 빠지면 로더 드롭다운이 빈다.
 #     diffusion_models/anima-*.safetensors
 #     text_encoders/qwen_3_06b_base.safetensors
-#     vae/qwen_image_vae.safetensors            ← Qwen-Image 와 동일 파일. krea/qwen 프로필과 겹치면
+#     vae/qwen_image_vae.safetensors            ← Qwen-Image 와 동일 파일. krea 프로필과 겹치면
 #                                                   setup.sh 가 이미 있는 걸 보고 다시 받지 않는다.
 #
 # ⚠ 라이선스: CircleStone Labs Non-Commercial License. Apache 2.0(Wan 2.2) 도
@@ -46,7 +46,7 @@
 #   anima(aesthetic) 단독                     5.6GB
 #   anima(turbo) 단독                         5.7GB   ← base(4.18) + turbo lora(0.15) + enc/vae
 #   anima(base) 단독                          5.6GB
-#   krea 또는 qwen 프로필과 같이 쓰면 VAE 0.24GB 는 중복으로 받지 않는다(파일명 동일, 경로도 동일).
+#   krea 프로필과 같이 쓰면 VAE 0.24GB 는 중복으로 받지 않는다(파일명 동일, 경로도 동일).
 #
 # 강제 지정: ANIMA=turbo ./setup.sh anima
 # LoRA 학습용 베이스만: ANIMA=base ./setup.sh anima
@@ -79,7 +79,7 @@ esac
 FILES+=(
   # Qwen-3 0.6B. T5 도 CLIP 도 아니라서 (word:1.5) 류의 CLIP 전용 강조 문법이 그대로는 안 통한다.
   "$BASE/text_encoders|qwen_3_06b_base.safetensors|$ANIMA_REPO/text_encoders/qwen_3_06b_base.safetensors"
-  # Qwen-Image 와 동일 VAE. krea/qwen 프로필과 파일명이 같아 중복 다운로드는 안 일어난다.
+  # Qwen-Image 와 동일 VAE. krea 프로필과 파일명이 같아 중복 다운로드는 안 일어난다.
   "$BASE/vae|qwen_image_vae.safetensors|$ANIMA_REPO/vae/qwen_image_vae.safetensors"
 )
 

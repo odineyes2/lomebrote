@@ -22,9 +22,6 @@
 # 볼륨 100GB 기준 (누계):
 #   video(5b) 단독                     18GB
 #   video(14b) 단독                    32GB
-#   anime + qwen(fp8) + video(5b)      70GB   ← 권장 조합
-#   anime + qwen(gguf) + video(14b)    78GB
-#   anime + qwen(fp8) + video(14b)     83GB
 #
 # 다른 프로필과 같이 지정하면 자동으로 5b 로 내려간다.
 # 강제 지정: VIDEO=14b ./setup.sh video
@@ -32,8 +29,8 @@
 VIDEO_MODE="${VIDEO:-}"
 if [ -z "$VIDEO_MODE" ]; then
   VIDEO_MODE=14b
-  for _a in "$@"; do
-    case "$_a" in anime|nsfw|real|retro|qwen|ltx) VIDEO_MODE=5b ;; esac
+  for _a in "${PROFILES[@]}"; do
+    case "$_a" in wai) VIDEO_MODE=5b ;; esac
   done
 fi
 

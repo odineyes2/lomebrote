@@ -15,7 +15,7 @@ cd /workspace/lomebrote
 ```bash
 # 20GB급 파일이 섞이므로 tmux 안에서 돌린다 (아래 "긴 다운로드" 항목 참고)
 tmux new -s dl
-./setup.sh anime qwen video
+./setup.sh wai video
 ```
 
 끝나면 **RunPod 콘솔에서 파드를 Restart** 해야 `extra_model_paths.yaml`이 적용된다.
@@ -45,7 +45,7 @@ tmux는 **명령을 터미널이 아니라 서버 쪽 세션에 붙여 두는** 
 tmux new -s dl
 
 # 2. 세션 안에서 평소처럼 실행
-cd /workspace/lomebrote && ./setup.sh anime qwen video
+cd /workspace/lomebrote && ./setup.sh wai video
 
 # 3. 붙여 놓은 채로 빠져나온다 — Ctrl+b 를 누르고 손을 뗀 다음 d
 #    (동시에 누르는 게 아니라 순서대로. "detach"의 d)
@@ -103,30 +103,28 @@ apt-get update -qq && apt-get install -y -qq tmux
 
 | 프로필 | 내용 | 계열 |
 | --- | --- | --- |
-| `real` | RealVisXL V5.0 + xinsir ControlNet + UltraSharpV2 | SDXL |
-| `anime` | Illustrious XL v1.1 (공식 베이스) + Illustrious 계열 CN + AnimeSharp | SDXL |
-| `nsfw` | WAI-illustrious + Illustrious 계열 CN + AnimeSharp | SDXL |
-| `retro` | Retrordinary (Illustrious 계열) + 위와 동일 | SDXL |
-| `qwen` | Qwen-Image-Edit 2511 — 지시문 기반 편집 | 독립 |
+| `wai` | WAI-illustrious + Illustrious 계열 CN + AnimeSharp/Remacri + IP-Adapter. `tools`를 자동 포함 | SDXL |
+| `tools` | 공용 도구 — FaceDetailer, 전처리기(DWPose·Depth·lineart), WD14 태거, USDU, Inpaint C&S | 공용 |
 | `video` | Wan 2.2 — i2v 영상 생성 | 독립 |
-| `ltx` | LTX-2.5 — 영상+오디오 동시 생성 (실험적) | 독립 |
 | `krea` | Krea 2 Turbo — 지시문 기반 t2i (turbo/int8/raw) | 독립 |
 | `dasiwa` | Wan 2.2 I2V DaSiWa-TastySin GGUF (NSFW LoRA 세트) | Wan 2.2 MoE |
 | `smooth` | Wan 2.2 I2V SmoothMix (애니/실사 스타일 LoRA 세트) | Wan 2.2 MoE |
 | `anima` | Anima — 애니메이션 특화 독립 t2i (aesthetic/turbo/base) | 독립 |
+| `latentsync` | LatentSync 립싱크 (노드 폴더 안에 체크포인트 설치) | 독립 |
 
 여러 개를 동시에 지정할 수 있고, 겹치는 파일은 한 번만 받는다.
 
 ```bash
-./setup.sh anime nsfw          # 체크포인트만 다르고 나머지 공유
-./setup.sh anime qwen video    # 부트스트랩 조합
+./setup.sh wai video           # 부트스트랩 조합 (video 는 자동으로 5b)
+./setup.sh krea tools          # tools 는 wai 가 아닌 프로필에서 쓰려면 직접 지정
 ```
 
-`real` / `anime` / `nsfw` / `retro`는 `SDXL=1`을 선언해서 IP-Adapter와 FaceDetailer
-감지 모델(약 4.5GB)을 함께 받는다. `qwen` / `video` / `ltx` 단독 실행에서는 건너뛴다.
+**공통으로 깔리는 것은 없다.** 노드와 가중치는 필요한 프로필이 직접 선언한다.
+`wai`는 내부에서 `tools`를 불러오므로 `./setup.sh wai` 하나로 SDXL 작업에 필요한 노드·가중치가
+모두 깔린다. `krea`·`anima`·`video` 계열 단독 실행에서는 `tools`가 설치되지 않는다.
 
-**ControlNet은 체크포인트 계열에 맞춰야 한다.** 실사에는 범용 SDXL(xinsir),
-Illustrious 계열에는 계열을 맞춘 것. 반대로 물리면 화풍이 끌려가고 색이 탁해진다.
+**ControlNet은 체크포인트 계열에 맞춰야 한다.** Illustrious 계열에는 계열을 맞춘 것을 쓴다.
+범용 SDXL ControlNet을 물리면 화풍이 끌려가고 색이 탁해진다.
 
 ### 모드가 있는 프로필
 
@@ -134,28 +132,27 @@ Illustrious 계열에는 계열을 맞춘 것. 반대로 물리면 화풍이 끌
 
 | 프로필 | 변수 | 값 | 기본 |
 | --- | --- | --- | --- |
-| `qwen` | `QWEN` | `fp8` (20.5GB) / `gguf` (Q5\_K\_M, 15GB) | `fp8`, `ltx`나 `video=14b`와 함께면 `gguf` |
-| `video` | `VIDEO` | `5b` (TI2V 단일) / `14b` (I2V MoE) | `14b`, 다른 프로필과 함께면 `5b` |
-| `ltx` | `LTX` | `distilled` (8스텝) / `dev` (학습 가능) | `distilled` |
+| `video` | `VIDEO` | `5b` (TI2V 단일) / `14b` (I2V MoE) | `14b`, `wai`와 함께면 `5b` |
 | `krea` | `KREA` | `turbo` (8스텝) / `int8` (스타일 레퍼런스) / `raw` (52스텝, 학습용) | `turbo` |
 | `krea` | `KREA_LORAS` | `1`이면 공식 스타일 LoRA 9종까지 함께 받음 | 미설정 |
 | `anima` | `ANIMA` | `aesthetic` (v1.1, 별도 LoRA 없이 고품질) / `turbo` (8~12스텝) / `base` (LoRA 학습용) | `aesthetic` |
 
 ```bash
 VIDEO=14b ./setup.sh video
-QWEN=gguf ./setup.sh anime qwen
+KREA=raw ./setup.sh krea
 ```
 
 ---
 
 ## 프로필별 설치 파일
 
-`setup.sh`가 실제로 받는 파일은 **공통분** → **SDXL 계열 공통분** → **프로필 고유분** 순으로 쌓인다.
+`setup.sh`가 실제로 받는 파일은 **프로필이 직접 선언한 것뿐**이다. 공통으로 깔리는 것은 없다.
 아래는 `profiles/*.sh`를 그대로 반영한 현재 목록이다 (경로는 전부 `$BASE` = `/workspace/shared_models` 기준 상대경로).
 
-### 공통 — 모든 프로필
+### `tools` — 공용 도구
 
-전처리기 가중치. 프로필과 무관하게 항상 받는다 (약 1.9GB).
+체크포인트 계열과 무관하게 쓰는 노드·전처리기·검출 모델. 특정 모델에 귀속시키기 애매해서 별도 프로필로 뺐다.
+`wai`가 자동으로 불러오고, 다른 프로필에서 쓰려면 `./setup.sh krea tools`처럼 직접 지정한다.
 
 | 폴더 | 파일 | 용도 |
 | --- | --- | --- |
@@ -163,74 +160,34 @@ QWEN=gguf ./setup.sh anime qwen
 | `controlnet_aux/hr16/DWPose-TorchScript-BatchSize5` | `dw-ll_ucoco_384_bs5.torchscript.pt` | DWPose 골격 추정 (GPU) |
 | `controlnet_aux/yzd-v/DWPose` | `yolox_l.onnx` | DWPose 폴백 (CPU) |
 | `controlnet_aux/depth-anything/Depth-Anything-V2-Large` | `depth_anything_v2_vitl.pth` | 깊이맵 추출 (1.3GB) |
-
-### 공통 — SDXL 계열 (`real` / `anime` / `nsfw` / `retro`)
-
-`SDXL=1`을 선언한 프로필에서만 추가로 받는다 (약 4.5GB).
-
-| 폴더 | 파일 | 용도 |
-| --- | --- | --- |
-| `clip_vision` | `CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors` | IP-Adapter 클립 인코더 |
-| `ipadapter` | `ip-adapter_sdxl_vit-h.safetensors` | IP-Adapter (기본) |
-| `ipadapter` | `ip-adapter-plus_sdxl_vit-h.safetensors` | IP-Adapter Plus |
+| `wd14_tagger` | `wd-swinv2-tagger-v3.onnx` | WD14 태거 |
+| `wd14_tagger` | `wd-swinv2-tagger-v3.csv` | WD14 태거 태그 목록 |
 | `ultralytics/bbox` | `face_yolov8m.pt` | FaceDetailer 얼굴 검출 |
 | `ultralytics/bbox` | `hand_yolov8s.pt` | FaceDetailer 손 검출 |
 | `ultralytics/segm` | `person_yolov8m-seg.pt` | FaceDetailer 인물 세그멘테이션 |
 | `sams` | `sam_vit_b_01ec64.pth` | 얼굴 경계 정리용 SAM (선택 사용) |
 
-### `real` — RealVisXL V5.0
+전처리기 가중치는 약 1.9GB, 검출 모델과 SAM은 약 0.5GB다.
 
-| 폴더 | 파일 |
-| --- | --- |
-| `checkpoints` | `RealVisXL_V5.0_fp16.safetensors` |
-| `upscale_models` | `4x-UltraSharpV2.pth` |
-| `controlnet` | `xinsir_openpose.safetensors` |
-| `controlnet` | `xinsir_depth.safetensors` |
-| `controlnet` | `xinsir_scribble.safetensors` |
-| `controlnet` | `xinsir_canny.safetensors` |
+커스텀 노드: `ComfyUI_UltimateSDUpscale` · `ComfyUI-Inpaint-CropAndStitch` · `ComfyUI-WD14-Tagger` ·
+`comfyui_controlnet_aux` · `ComfyUI-Impact-Pack` · `ComfyUI-Impact-Subpack`
+(노드 설정 — controlnet_aux 가중치 경로, WD14 기본값, Impact `install.py` — 은 프로필이 `POST_NODES` 훅으로 처리한다)
 
-### `anime` — Illustrious XL v1.1
+### `wai` — WAI-illustrious
 
-| 폴더 | 파일 |
-| --- | --- |
-| `checkpoints` | `Illustrious-XL-v1.1.safetensors` |
-| `upscale_models` | `4x-AnimeSharp.pth` |
-| `controlnet` | `Illustrious_openpose.safetensors` |
-| `controlnet` | `NoobAI_depth_midas.safetensors` |
-| `controlnet` | `Illustrious_lineart_anime.safetensors` |
-| `wd14_tagger` | `wd-swinv2-tagger-v3.onnx` |
-| `wd14_tagger` | `wd-swinv2-tagger-v3.csv` |
-
-### `nsfw` — WAI-illustrious
-
-ControlNet·업스케일러·태거는 `anime`과 동일한 파일을 공유한다.
+`tools`를 자동으로 함께 설치한다. 여기에는 SDXL 체크포인트에만 묶이는 것을 둔다.
 
 | 폴더 | 파일 | 비고 |
 | --- | --- | --- |
 | `checkpoints` | `WAI-illustrious-SDXL.safetensors` | civitai.red, `CIVITAI_TOKEN` 필요 |
-| *(위 anime 표와 동일)* | 업스케일러 1 · ControlNet 3 · 태거 2 | — |
+| `clip_vision` | `CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors` | IP-Adapter 클립 인코더 (약 4GB의 IP-Adapter 묶음) |
+| `ipadapter` | `ip-adapter_sdxl_vit-h.safetensors` | IP-Adapter (기본) |
+| `ipadapter` | `ip-adapter-plus_sdxl_vit-h.safetensors` | IP-Adapter Plus |
+| `upscale_models` | `4x-AnimeSharp.pth` · `4x_foolhardy_Remacri.safetensors` | |
+| `controlnet` | `Illustrious_openpose.safetensors` · `NoobAI_depth_midas.safetensors` · `Illustrious_lineart_anime.safetensors` | Illustrious 계열에 맞춘 것 |
+| `loras` | 일반·캐릭터·체위 LoRA 다수 | civitai.red — 목록은 `profiles/wai.sh` 참고 |
 
-### `retro` — Retrordinary
-
-ControlNet·업스케일러·태거는 `anime`과 동일한 파일을 공유한다.
-
-| 폴더 | 파일 | 비고 |
-| --- | --- | --- |
-| `checkpoints` | `TC-RetrordinaryFinalVAELiq.safetensors` | civitai.red 미러 (civitai #2113 403 회피) |
-| *(위 anime 표와 동일)* | 업스케일러 1 · ControlNet 3 · 태거 2 | — |
-
-### `qwen` — Qwen-Image-Edit 2511
-
-| 폴더 | 파일 | 비고 |
-| --- | --- | --- |
-| `diffusion_models` | `qwen_image_edit_2511_fp8mixed.safetensors` | `QWEN=fp8`, 20.5GB |
-| `unet` | `qwen-image-edit-2511-Q5_K_M.gguf` | `QWEN=gguf`, 15GB |
-| `text_encoders` | `qwen_2.5_vl_7b_fp8_scaled.safetensors` | 두 모드 공유 |
-| `vae` | `qwen_image_vae.safetensors` | 두 모드 공유 |
-| `loras` | `Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors` | 4스텝 증류 LoRA |
-| `loras` | `qwen-image-edit-2511-multiple-angles-lora.safetensors` | 다각도 LoRA |
-
-커스텀 노드: `ComfyUI-GGUF` (fp8 모드에서도 미리 설치)
+커스텀 노드: `efficiency-nodes-comfyui` · `ComfyUI_IPAdapter_plus` (+ `tools`의 노드 전체)
 
 ### `video` — Wan 2.2 i2v
 
@@ -248,22 +205,6 @@ ControlNet·업스케일러·태거는 `anime`과 동일한 파일을 공유한�
 | `text_encoders` | `umt5_xxl_fp8_e4m3fn_scaled.safetensors` | 두 모드 공유, 6.7GB |
 
 커스텀 노드: `ComfyUI-VideoHelperSuite`
-
-### `ltx` — LTX-2.5 (실험적)
-
-| 폴더 | 파일 | 비고 |
-| --- | --- | --- |
-| `diffusion_models` | `ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors` | `LTX=distilled` (기본) |
-| `diffusion_models` | `ltx-2.5-22b-dev-transformer-comfy-int8-convrot.safetensors` | `LTX=dev` |
-| `loras` | `ltx-2.5-22b-distilled-lora-450-bf16.safetensors` | `LTX=dev`, 증류 스케줄용 |
-| `text_encoders` | `gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors` | Gemma 4 12B 기반, T5 아님 |
-| `vae` | `ltx-2.5-video-vae-conv-bf16.safetensors` | 영상 VAE |
-| `vae` | `ltx-2.5-audio-vae-bf16.safetensors` | 오디오 VAE |
-| `model_patches` | `ltx-2.5-duration-head-bf16.safetensors` | 길이(duration) 헤드 |
-| `latent_upscale_models` | `ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors` | 공간 2배 업스케일 |
-| `latent_upscale_models` | `ltx-2.5-latent-temporal-upscaler-x2-bf16-1.0.safetensors` | 시간 2배 업스케일 |
-
-커스텀 노드: `ComfyUI-VideoHelperSuite` · `NEED_HF_TOKEN=1` (게이트 저장소, 약관 동의 선행 필요)
 
 ### `krea` — Krea 2 Turbo t2i
 
@@ -291,7 +232,7 @@ ControlNet·업스케일러·태거는 `anime`과 동일한 파일을 공유한�
 | `diffusion_models` | `anima-base-v1.0.safetensors` | `ANIMA=turbo` / `ANIMA=base` 공용 베이스 |
 | `loras` | `anima-turbo-lora-v0.2.safetensors` | `ANIMA=turbo` |
 | `text_encoders` | `qwen_3_06b_base.safetensors` | 모드 공유 |
-| `vae` | `qwen_image_vae.safetensors` | 모드 공유. `krea`/`qwen`과 파일명이 같아 중복 다운로드 없음 |
+| `vae` | `qwen_image_vae.safetensors` | 모드 공유. `krea`와 파일명이 같아 중복 다운로드 없음 |
 
 라이선스: CircleStone Labs Non-Commercial License — 모델·LoRA 본체는 비상업 전용, 생성된 이미지 자체는 상업 이용 가능(모델 카드 명시).
 
@@ -338,20 +279,13 @@ ControlNet·업스케일러·태거는 `anime`과 동일한 파일을 공유한�
 
 | 명령 | 누계 |
 | --- | --- |
-| `./setup.sh anime` | ~21GB |
-| `./setup.sh anime nsfw` | ~28GB (체크포인트 하나만 추가) |
-| `./setup.sh qwen` (fp8) | ~37GB |
-| `./setup.sh qwen` (gguf) | ~32GB |
 | `./setup.sh video` (5b) | ~18GB |
 | `./setup.sh video` (14b) | ~32GB |
-| `./setup.sh ltx` | ~40GB |
 | `./setup.sh krea` (turbo) | ~19GB |
 | `./setup.sh anima` (aesthetic/turbo/base) | ~5.6GB |
-| `./setup.sh anime qwen` (fp8) | ~52GB |
-| **`./setup.sh anime qwen video`** | **~70GB** ← 권장 |
-| `VIDEO=14b ./setup.sh anime qwen video` | ~78GB (qwen 자동 gguf) |
 
-`ltx`는 `qwen`과 함께 쓰지 않는 편이 낫다. 영상 전용 파드로 분리하는 게 편하다.
+위 수치는 공통 전처리기(약 1.9GB)가 모든 프로필에 깔리던 때 잰 값이다. 지금은 `tools`를 쓰지 않으면
+설치되지 않으므로 실제로는 그만큼 적을 수 있다. `wai`(+`tools`)는 체크포인트와 LoRA가 많아 누계를 다시 재지 않았다.
 
 `dasiwa`/`smooth`는 각각 diffusion_models 2개(고/저노이즈) + LoRA 6~7종 조합으로, 단독 실행 시 대략 20GB대 후반(diffusion_models ~14GB + LoRA ~4GB + 공유 text_encoder ~6.7GB)이지만 프로필 파일에 공식 누계가 기록돼 있지 않다.
 
@@ -375,20 +309,17 @@ printf '%s' '<hf 키>'      > /workspace/.hf_token      && chmod 600 /workspace/
 환경변수가 우선이므로 한 번만 다르게 쓰려면 앞에 붙이면 된다.
 
 ```bash
-CIVITAI_TOKEN=xxxx ./setup.sh nsfw
+CIVITAI_TOKEN=xxxx ./setup.sh wai
 ```
 
 | 토큰 | 필요한 프로필 | 비고 |
 | --- | --- | --- |
-| `CIVITAI_TOKEN` | `nsfw`, `retro` | civitai API 다운로드에 필요. 쿼리 파라미터로 붙는다 (헤더는 CDN 리다이렉트에서 잘림) |
-| `HF_TOKEN` | `ltx` | 게이트 저장소용. **웹에서 약관 동의를 먼저** 해야 한다 |
-
-`ltx`를 쓰려면 [huggingface.co/Lightricks/LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5)
-에서 동의 후 토큰을 넣는다. 둘 중 하나라도 빠지면 401이 난다.
+| `CIVITAI_TOKEN` | `wai`, `dasiwa`, `smooth`, `krea`(LoRA) | civitai API 다운로드에 필요. 쿼리 파라미터로 붙는다 (헤더는 CDN 리다이렉트에서 잘림) |
+| `HF_TOKEN` | 현재 필수인 프로필 없음 | 게이트 저장소를 받는 프로필을 추가할 때(`NEED_HF_TOKEN=1`). **웹에서 약관 동의를 먼저** 해야 한다 |
 
 **civitai 403 이슈**: `civitai.com` 직링크는 `b2.civitai.com`으로 리다이렉트되면 403이
 난다(civitai #2113). R2로 배정되면 되고 B2면 안 되는데 어느 쪽일지는 서버가 정하고,
-재시도로는 못 뚫는다. 그래서 `nsfw`/`retro`는 `civitai.red` 미러를 쓴다.
+재시도로는 못 뚫는다. 그래서 `wai`는 `civitai.red` 미러를 쓴다.
 
 ---
 
@@ -396,9 +327,7 @@ CIVITAI_TOKEN=xxxx ./setup.sh nsfw
 
 | 변수 | 기본 | 용도 |
 | --- | --- | --- |
-| `QWEN` | 자동 | `fp8` / `gguf` |
 | `VIDEO` | 자동 | `5b` / `14b` |
-| `LTX` | `distilled` | `distilled` / `dev` |
 | `KREA` | `turbo` | `turbo` / `int8` / `raw` |
 | `KREA_LORAS` | 미설정 | `1`이면 공식 스타일 LoRA 9종 추가 |
 | `ANIMA` | `aesthetic` | `aesthetic` / `turbo` / `base` |
@@ -413,16 +342,18 @@ CIVITAI_TOKEN=xxxx ./setup.sh nsfw
 ```
 lomebrote/
 ├── README.md
-├── setup.sh                    공통 설치 + 프로필 로드 + 다운로드
+├── setup.sh                    프로필 로드 + 노드 clone + 다운로드 (공통 설치분 없음)
+├── move_comfy_output.sh        ComfyUI/output → /workspace/output 심볼릭 링크 (setup.sh 가 호출)
 ├── extra_model_paths.yaml      ComfyUI 모델 경로 설정
 ├── profiles/
-│   ├── real.sh
-│   ├── anime.sh
-│   ├── nsfw.sh
-│   ├── retro.sh
-│   ├── qwen.sh                 Qwen-Image-Edit 2511
+│   ├── wai.sh                  WAI-illustrious (tools 자동 포함)
+│   ├── tools.sh                공용 도구 (FaceDetailer·전처리기·태거·USDU)
 │   ├── video.sh                Wan 2.2
-│   └── ltx.sh                  LTX-2.5 (실험적)
+│   ├── dasiwa.sh               Wan 2.2 DaSiWa
+│   ├── smooth.sh               Wan 2.2 SmoothMix
+│   ├── krea.sh                 Krea 2
+│   ├── anima.sh                Anima
+│   └── latentsync.sh           립싱크
 └── workflows/
     └── *.json                  ComfyUI 워크플로우
 ```
@@ -438,28 +369,36 @@ lomebrote/
 | --- | --- | --- |
 | `COMFY` | `/workspace/runpod-slim/ComfyUI` | ComfyUI 본체 |
 | `BASE` | `/workspace/shared_models` | 모든 모델 |
-| `PROJ` | `/workspace/project_lomebrote` | 출력물, 깊이맵, 데이터셋, 영상 입출력 |
+| `PROJ` | `/workspace/files` | 깊이맵, 데이터셋, 영상 입출력 (예전 이름 `project_lomebrote`) |
+| `OUTPUT` | `/workspace/output` | 생성된 이미지·영상. `ComfyUI/output` 은 이쪽을 가리키는 심볼릭 링크 |
 | `REPO` | = `$SELF` | 이 저장소 |
+
+`setup.sh`는 예전 `/workspace/project_lomebrote` 가 남아 있고 `/workspace/files` 가 없으면
+폴더째 `files`로 옮긴다. 그 안의 `output_keep/` 은 `/workspace/output` 으로 합친다
+(같은 이름의 파일은 덮어쓰지 않고 `output_keep/` 에 남기며, 남았다는 경고를 낸다).
 
 ### 프로필 계약
 
-프로필이 하는 일은 세 가지뿐이다.
+공통으로 깔리는 것은 없다. 필요한 노드·가중치는 프로필이 직접 선언한다.
 
 ```bash
 FILES+=( "저장폴더|파일명|URL" )              # 받을 파일
 NODE_REPOS+=( "폴더명|git URL|서브모듈여부" )  # 필요한 커스텀 노드
-SDXL=1                                        # SDXL 계열이면 선언 (IPAdapter 블록 조건)
+POST_NODES+=( 함수명 )                         # 노드 clone·requirements 이후에 할 설정 ([4/5] 에서 호출)
+load_profile tools                            # 다른 프로필의 구성이 필요할 때 (중복 로드 방지됨)
 NEED_HF_TOKEN=1                               # HF 게이트 파일을 받으면 선언 (사전 경고용)
 ```
 
-새 프로필은 기존 파일을 복사해 URL만 갈아끼우면 된다. `NODE_REPOS+=`는 반드시
-`setup.sh`의 `source` 지점 아래에서 동작하도록 배열이 먼저 선언돼 있다.
+새 프로필은 기존 파일을 복사해 URL만 갈아끼우면 된다. `FILES`/`NODE_REPOS`/`POST_NODES`는
+`setup.sh`가 프로필을 `source` 하기 전에 먼저 선언해 둔다. 함께 지정된 프로필 이름은
+`PROFILES` 배열로 볼 수 있다(`video.sh` 가 5b 자동 선택에 사용).
+`POST_NODES` 함수는 마지막 명령이 실패하면 `set -e` 로 전체가 죽으므로 `[ ... ] && ...` 대신 `if` 를 쓴다.
 
 ---
 
 ## 커스텀 노드
 
-### 공통
+### `tools` (`wai`가 자동 포함)
 
 | 노드 | 용도 |
 | --- | --- |
@@ -467,18 +406,18 @@ NEED_HF_TOKEN=1                               # HF 게이트 파일을 받으면
 | `ComfyUI-Inpaint-CropAndStitch` | 인페인팅 영역 확대 후 재합성 |
 | `ComfyUI-WD14-Tagger` | booru 태그 추출 (애니 계열에서만 유용) |
 | `comfyui_controlnet_aux` | DWPose, DepthAnythingV2 등 전처리기 |
-| `efficiency-nodes-comfyui` | XY Plot, KSampler (Efficient) — jags111 포크가 유지판 |
-| `ComfyUI_IPAdapter_plus` | IP-Adapter |
 | `ComfyUI-Impact-Pack` + `-Subpack` | FaceDetailer. v8.0부터 둘 다 필요 |
 
 ### 프로필별 추가
 
 | 프로필 | 노드 |
 | --- | --- |
-| `qwen` | `ComfyUI-GGUF` (fp8 모드에서도 설치 — 나중에 GGUF로 내려갈 때 재실행이 줄어든다) |
-| `video`, `ltx` | `ComfyUI-VideoHelperSuite` (영상 *로드*용. mp4 저장은 코어 `SaveVideo` 노드로 된다) |
+| `wai` | `efficiency-nodes-comfyui` (XY Plot, KSampler (Efficient) — jags111 포크가 유지판), `ComfyUI_IPAdapter_plus` |
+| `video`, `dasiwa`, `smooth` | `ComfyUI-VideoHelperSuite` (영상 *로드*용. mp4 저장은 코어 `SaveVideo` 노드로 된다) |
+| `dasiwa` | `ComfyUI-GGUF` |
+| `latentsync` | `ComfyUI-LatentSyncWrapper` |
 
-### 전처리기 가중치 (프로필 무관, 약 1.9GB)
+### 전처리기 가중치 (`tools`, 약 1.9GB)
 
 | 파일 | 크기 | 용도 |
 | --- | --- | --- |
@@ -494,25 +433,16 @@ NEED_HF_TOKEN=1                               # HF 게이트 파일을 받으면
 
 ## 권장 설정 (SDXL 계열)
 
-| | real | anime / nsfw / retro |
-| --- | --- | --- |
-| CFG | 3\~6 | 4\~7 |
-| Steps | 25\~35 | 28\~32 |
-| 샘플러 | DPM++ 2M Karras | Euler a |
-| 프롬프트 | 자연어 + 사진 용어 | booru 태그 |
-| 네거티브 | `cartoon, anime, 3d render, illustration` | 품질 태그 계열 |
-| CN end\_percent | 포즈 0.4 / 깊이 0.8 | 포즈 0.4 / 깊이 0.8 |
+| | wai |
+| --- | --- |
+| CFG | 4\~7 |
+| Steps | 28\~32 |
+| 샘플러 | Euler a |
+| 프롬프트 | booru 태그 |
+| 네거티브 | 품질 태그 계열 |
+| CN end\_percent | 포즈 0.4 / 깊이 0.8 |
 
-**실사 프롬프트.** `masterpiece` 같은 품질 태그는 효과가 없거나 해롭다.
-대신 사진 용어가 품질 태그 역할을 한다 — 렌즈(35mm, 85mm), 조명(golden hour,
-overcast), 심도.
-
-```
-a weathered old man in a wool coat standing on a stone bridge,
-overcast evening light, shallow depth of field, 35mm photograph
-```
-
-**Qwen / Wan은 다르다.** 태그 나열이 아니라 문장형 지시문·서술을 쓴다.
+**Wan은 다르다.** 태그 나열이 아니라 문장형 지시문·서술을 쓴다.
 특히 i2v에서는 이미지 내용이 아니라 **무엇이 어떻게 움직이는지**를 쓴다.
 
 ---
@@ -526,9 +456,7 @@ overcast evening light, shallow depth of field, 35mm photograph
 | 빈 드롭다운 | 필요한 키 |
 | --- | --- |
 | FaceDetailer 감지 모델 | `ultralytics_bbox`, `ultralytics_segm`, `sams` |
-| Qwen / Wan 로더 | `diffusion_models`, `text_encoders`, `unet` |
-| LTX duration head | `model_patches` |
-| LTX 업스케일러 | `latent_upscale_models` (안 뜨면 `upscale_models/`로 옮겨 볼 것) |
+| Wan / Krea / Anima 로더 | `diffusion_models`, `text_encoders`, `unet` |
 
 `ultralytics/` 아래 `bbox`와 `segm`은 **하위 폴더 구조 그대로** 있어야 한다.
 평평하게 두면 Impact Subpack이 못 찾는다.
@@ -556,7 +484,7 @@ pip의 빌드 격리 환경은 PyPI만 본다. `setup.sh`는 격리를 끄고 �
 ### 영상 모델 템플릿이 안 보인다
 
 ComfyUI 코어 버전 문제다. `setup.sh`가 기동 시 버전을 찍어 준다.
-Wan 2.2 템플릿은 0.3.46 이상, LTX-2.5는 **0.32.0 이상**이 필요하다.
+Wan 2.2 템플릿은 0.3.46 이상, Anima는 **0.11.1 이상**이 필요하다.
 
 ```bash
 git -C /workspace/runpod-slim/ComfyUI pull
