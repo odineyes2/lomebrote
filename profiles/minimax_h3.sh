@@ -41,5 +41,6 @@ FILES+=(
 #  "$BASE/vae|minimax_h3_video_vae_int8_convrot.safetensors|https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_video_vae_int8_convrot.safetensors"
 #  "$BASE/vae|minimax_h3_audio_vae_fp32.safetensors|https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_audio_vae_fp32.safetensors"
 
-  "$BASE/loras|MysticXXX_MMH3-V4.safetensors|https://civitai.red/api/download/models/3266628?fileId=3150341"
+  "$BASE/loras/MMH3|MysticXXX_MMH3-V4.safetensors|https://civitai.red/api/download/models/3266628?fileId=3150341"
+  "$BASE/loras/MMH3|H3_Motion_BoosterV2.safetensors|https://civitai.red/api/download/models/3228867?fileId=3111185"
 )
