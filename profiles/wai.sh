@@ -32,34 +32,30 @@ FILES+=(
   "$BASE/controlnet|Illustrious_lineart_anime.safetensors|https://huggingface.co/Eugeoter/noob-sdxl-controlnet-lineart_anime/resolve/main/diffusion_pytorch_model.fp16.safetensors"
 
   # General LoRA
-  "$BASE/loras|IFL_v1.0_IL.safetensors|https://civitai.red/api/download/models/2211883?fileId=2104890"
-  "$BASE/loras|DynamicPoseIL2att_alpha1.0_rank4_noxattn_900steps.safetensors|https://civitai.red/api/download/models/1607510?fileId=1507569"
-  "$BASE/loras|S1 Dramatic Lighting Illustrious_V2.safetensors|https://civitai.red/api/download/models/2209882?fileId=2102847"
-  "$BASE/loras|748cm_c_illu.safetensors|https://civitai.red/api/download/models/2367109?fileId=2257920"
-  "$BASE/loras|4kiak4ne.safetensors|https://civitai.red/api/download/models/1394295?fileId=1296714"
-  "$BASE/loras|StS-Illustrious-Detail-Slider-v1.0.safetensors|https://civitai.red/api/download/models/1122976?fileId=1027785"
-  "$BASE/loras|illustrious_noobai_epsilon_pred_1_best_quality_v1.safetensors|https://civitai.red/api/download/models/1094296?fileId=999328"
-  "$BASE/loras|Niji_Semi_realism_F_N_R_epoch_10.safetensors|https://civitai.red/api/download/models/2854725?fileId=2740836"
-  "$BASE/loras|ponyv6_noobE11_2_adamW-000017.safetensors|https://civitai.red/api/download/models/1240413?fileId=1145680"
-  "$BASE/loras|xmc_v0.3_noobai_cwhj.safetensors|https://civitai.red/api/download/models/1041204?fileId=946906"
+  "$BASE/loras/illustrious|IFL_v1.0_IL.safetensors|https://civitai.red/api/download/models/2211883?fileId=2104890"
+  "$BASE/loras/illustrious|DynamicPoseIL2att_alpha1.0_rank4_noxattn_900steps.safetensors|https://civitai.red/api/download/models/1607510?fileId=1507569"
+  "$BASE/loras/illustrious|S1 Dramatic Lighting Illustrious_V2.safetensors|https://civitai.red/api/download/models/2209882?fileId=2102847"
+  "$BASE/loras/illustrious|748cm_c_illu.safetensors|https://civitai.red/api/download/models/2367109?fileId=2257920"
+  "$BASE/loras/illustrious|4kiak4ne.safetensors|https://civitai.red/api/download/models/1394295?fileId=1296714"
+  "$BASE/loras/illustrious|StS-Illustrious-Detail-Slider-v1.0.safetensors|https://civitai.red/api/download/models/1122976?fileId=1027785"
+  "$BASE/loras/illustrious|illustrious_noobai_epsilon_pred_1_best_quality_v1.safetensors|https://civitai.red/api/download/models/1094296?fileId=999328"
+  "$BASE/loras/illustrious|Niji_Semi_realism_F_N_R_epoch_10.safetensors|https://civitai.red/api/download/models/2854725?fileId=2740836"
+  "$BASE/loras/illustrious|ponyv6_noobE11_2_adamW-000017.safetensors|https://civitai.red/api/download/models/1240413?fileId=1145680"
+  "$BASE/loras/illustrious|xmc_v0.3_noobai_cwhj.safetensors|https://civitai.red/api/download/models/1041204?fileId=946906"
+  "$BASE/loras/illustrious|ATRex_style-12V2Rev.safetensors|https://civitai.red/api/download/models/1804885?fileId=1705538"
    
   # Character LoRA
-  "$BASE/loras|SwordMaiden-IL-v2-08.safetensors|https://civitai.red/api/download/models/1759607?fileId=1660331"
-  "$BASE/loras|Cow_Girl.safetensors|https://civitai.red/api/download/models/2294136?fileId=2185137"
-  "$BASE/loras|Priestess.safetensors|https://civitai.red/api/download/models/2294142?fileId=2185148"
-  "$BASE/loras|goblin_slayer.safetensors|https://civitai.red/api/download/models/1348156?fileId=1304455"
-  "$BASE/loras|fern-s1-illustriousxl-lora-nochekaiser.safetensors|https://civitai.red/api/download/models/1626406?fileId=1527192"
-
-
-
-
+  "$BASE/loras/illustrious|SwordMaiden-IL-v2-08.safetensors|https://civitai.red/api/download/models/1759607?fileId=1660331"
+  "$BASE/loras/illustrious|Cow_Girl.safetensors|https://civitai.red/api/download/models/2294136?fileId=2185137"
+  "$BASE/loras/illustrious|Priestess.safetensors|https://civitai.red/api/download/models/2294142?fileId=2185148"
+  "$BASE/loras/illustrious|goblin_slayer.safetensors|https://civitai.red/api/download/models/1348156?fileId=1304455"
+  "$BASE/loras/illustrious|fern-s1-illustriousxl-lora-nochekaiser.safetensors|https://civitai.red/api/download/models/1626406?fileId=1527192"
 
    # NSFW Body Position
-  "$BASE/loras|Deep_Kiss_V3_ToTo-000007.safetensors|https://civitai.red/api/download/models/2314955?fileId=2208182"
-  "$BASE/loras|mating-press-from-side-v5-illustriousxl-lora-nochekaiser.safetensors|https://civitai.red/api/download/models/2739911?fileId=2626221"
-  "$BASE/loras|mating-press-from-above-v4-illustriousxl-lora-nochekaiser.safetensors|https://civitai.red/api/download/models/2580089?fileId=2467294"
-  "$BASE/loras|on-side-missionary-v9-illustriousxl-lora-nochekaiser.safetensors|https://civitai.red/api/download/models/3169975?fileId=3050405"
-  "$BASE/loras|ATRex_style-12V2Rev.safetensors|https://civitai.red/api/download/models/1804885?fileId=1705538"
-  "$BASE/loras|xray.safetensors|https://civitai.red/api/download/models/1307519?fileId=1211680"
-  "$BASE/loras|BallsDeep-Anima-V1F-Re.safetensors|https://civitai.red/api/download/models/2885588?fileId=2765348"
+  "$BASE/loras/illustrious|Deep_Kiss_V3_ToTo-000007.safetensors|https://civitai.red/api/download/models/2314955?fileId=2208182"
+  "$BASE/loras/illustrious|mating-press-from-side-v5-illustriousxl-lora-nochekaiser.safetensors|https://civitai.red/api/download/models/2739911?fileId=2626221"
+  "$BASE/loras/illustrious|mating-press-from-above-v4-illustriousxl-lora-nochekaiser.safetensors|https://civitai.red/api/download/models/2580089?fileId=2467294"
+  "$BASE/loras/illustrious|on-side-missionary-v9-illustriousxl-lora-nochekaiser.safetensors|https://civitai.red/api/download/models/3169975?fileId=3050405"  
+  "$BASE/loras/illustrious|xray.safetensors|https://civitai.red/api/download/models/1307519?fileId=1211680"
+  "$BASE/loras/illustrious|BallsDeep-Anima-V1F-Re.safetensors|https://civitai.red/api/download/models/2885588?fileId=2765348"
 )
