@@ -61,7 +61,8 @@ FILES+=(
   "$BASE/loras/krea|Krea2MythD4rkL1nes.safetensors|https://civitai.com/api/download/models/3165227?fileId=3045636"
   "$BASE/loras/krea|Niji_Sweet_Spot_Krea2_v2A.safetensors|https://civitai.com/api/download/models/3210573?fileId=3092284"
   "$BASE/loras/krea|Mrpopo_anime_full_potential.safetensors|https://civitai.red/api/download/models/3168308?fileId=3048739"  
-  "$BASE/loras/krea|Iyo-Sumiv_10.safetensors|https://civitai.com/api/download/models/3226267?fileId=3118472"  
+  #"$BASE/loras/krea|Iyo-Sumiv_10.safetensors|https://civitai.com/api/download/models/3226267?fileId=3118472"
+  "$BASE/loras/krea|CharacterDesign-KREA2_v1.safetensors|https://civitai.red/api/download/models/3175060?fileId=3056157"
   "$BASE/loras/krea|krea2filterbypass.safetensors|https://huggingface.co/Kutches/Kr3a/resolve/c28120b6ebfff2629d475dcde0bbdbf45cbc06e9/krea2filterbypass.safetensors"  
   
   # NSFW lora
