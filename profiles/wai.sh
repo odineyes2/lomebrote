@@ -45,17 +45,20 @@ FILES+=(
   "$BASE/loras/illustrious|ATRex_style-12V2Rev.safetensors|https://civitai.red/api/download/models/1804885?fileId=1705538"
    
   # Character LoRA
-  "$BASE/loras/illustrious|SwordMaiden-IL-v2-08.safetensors|https://civitai.red/api/download/models/1759607?fileId=1660331"
-  "$BASE/loras/illustrious|Cow_Girl.safetensors|https://civitai.red/api/download/models/2294136?fileId=2185137"
-  "$BASE/loras/illustrious|Priestess.safetensors|https://civitai.red/api/download/models/2294142?fileId=2185148"
-  "$BASE/loras/illustrious|goblin_slayer.safetensors|https://civitai.red/api/download/models/1348156?fileId=1304455"
-  "$BASE/loras/illustrious|fern-s1-illustriousxl-lora-nochekaiser.safetensors|https://civitai.red/api/download/models/1626406?fileId=1527192"
+  #"$BASE/loras/illustrious|SwordMaiden-IL-v2-08.safetensors|https://civitai.red/api/download/models/1759607?fileId=1660331"
+  #"$BASE/loras/illustrious|Cow_Girl.safetensors|https://civitai.red/api/download/models/2294136?fileId=2185137"
+  #"$BASE/loras/illustrious|Priestess.safetensors|https://civitai.red/api/download/models/2294142?fileId=2185148"
+  #"$BASE/loras/illustrious|goblin_slayer.safetensors|https://civitai.red/api/download/models/1348156?fileId=1304455"
+  #"$BASE/loras/illustrious|fern-s1-illustriousxl-lora-nochekaiser.safetensors|https://civitai.red/api/download/models/1626406?fileId=1527192"
 
    # NSFW Body Position
-  "$BASE/loras/illustrious|Deep_Kiss_V3_ToTo-000007.safetensors|https://civitai.red/api/download/models/2314955?fileId=2208182"
-  "$BASE/loras/illustrious|mating-press-from-side-v5-illustriousxl-lora-nochekaiser.safetensors|https://civitai.red/api/download/models/2739911?fileId=2626221"
-  "$BASE/loras/illustrious|mating-press-from-above-v4-illustriousxl-lora-nochekaiser.safetensors|https://civitai.red/api/download/models/2580089?fileId=2467294"
-  "$BASE/loras/illustrious|on-side-missionary-v9-illustriousxl-lora-nochekaiser.safetensors|https://civitai.red/api/download/models/3169975?fileId=3050405"  
-  "$BASE/loras/illustrious|xray.safetensors|https://civitai.red/api/download/models/1307519?fileId=1211680"
-  "$BASE/loras/illustrious|BallsDeep-Anima-V1F-Re.safetensors|https://civitai.red/api/download/models/2885588?fileId=2765348"
+  #"$BASE/loras/illustrious|Deep_Kiss_V3_ToTo-000007.safetensors|https://civitai.red/api/download/models/2314955?fileId=2208182"
+  #"$BASE/loras/illustrious|mating-press-from-side-v5-illustriousxl-lora-nochekaiser.safetensors|https://civitai.red/api/download/models/2739911?fileId=2626221"
+  #"$BASE/loras/illustrious|mating-press-from-above-v4-illustriousxl-lora-nochekaiser.safetensors|https://civitai.red/api/download/models/2580089?fileId=2467294"
+  #"$BASE/loras/illustrious|on-side-missionary-v9-illustriousxl-lora-nochekaiser.safetensors|https://civitai.red/api/download/models/3169975?fileId=3050405"  
+  #"$BASE/loras/illustrious|xray.safetensors|https://civitai.red/api/download/models/1307519?fileId=1211680"
+  #"$BASE/loras/illustrious|BallsDeep-Anima-V1F-Re.safetensors|https://civitai.red/api/download/models/2885588?fileId=2765348"
+
+  # 
+  "$BASE/loras/illustrious|CharacterDesignIllustrious_Concept-10V2.safetensors|https://civitai.red/api/download/models/1096293?fileId=1001272"
 )
