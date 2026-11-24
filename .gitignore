@@ -7,3 +7,10 @@ __pycache__/
 comfy_scripts/results/
 comfy_scripts/ref/
 comfy_scripts/trash/
+
+# 화면 캡처 결과물 — 저장소에 넣지 않는다
+.ui-captures/
+/screens-*/
+/shots/
+tests/shots/
+/*.png
